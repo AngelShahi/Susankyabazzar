@@ -1,53 +1,44 @@
 import asyncHandler from '../middlewares/asyncHandler.js'
 import Product from '../models/productModel.js'
 
+// Centralized validation to avoid repetition
+const validateProductFields = (fields) => {
+  const { name, description, price, category, quantity, brand, image } = fields
+
+  if (!name) return 'Name is required'
+  if (!brand) return 'Brand is required'
+  if (!description) return 'Description is required'
+  if (!price) return 'Price is required'
+  if (!category) return 'Category is required'
+  if (!quantity) return 'Quantity is required'
+  if (!image) return 'Image is required'
+
+  return null
+}
+
 const addProduct = asyncHandler(async (req, res) => {
   try {
-    const { name, description, price, category, quantity, brand } = req.fields
-
-    // Validation
-    switch (true) {
-      case !name:
-        return res.json({ error: 'Name is required' })
-      case !brand:
-        return res.json({ error: 'Brand is required' })
-      case !description:
-        return res.json({ error: 'Description is required' })
-      case !price:
-        return res.json({ error: 'Price is required' })
-      case !category:
-        return res.json({ error: 'Category is required' })
-      case !quantity:
-        return res.json({ error: 'Quantity is required' })
+    // Validate required fields
+    const validationError = validateProductFields(req.fields)
+    if (validationError) {
+      return res.status(400).json({ error: validationError })
     }
 
     const product = new Product({ ...req.fields })
     await product.save()
-    res.json(product)
+    res.status(201).json(product)
   } catch (error) {
     console.error(error)
-    res.status(400).json(error.message)
+    res.status(400).json({ error: error.message })
   }
 })
 
 const updateProductDetails = asyncHandler(async (req, res) => {
   try {
-    const { name, description, price, category, quantity, brand } = req.fields
-
-    // Validation
-    switch (true) {
-      case !name:
-        return res.json({ error: 'Name is required' })
-      case !brand:
-        return res.json({ error: 'Brand is required' })
-      case !description:
-        return res.json({ error: 'Description is required' })
-      case !price:
-        return res.json({ error: 'Price is required' })
-      case !category:
-        return res.json({ error: 'Category is required' })
-      case !quantity:
-        return res.json({ error: 'Quantity is required' })
+    // Validate required fields
+    const validationError = validateProductFields(req.fields)
+    if (validationError) {
+      return res.status(400).json({ error: validationError })
     }
 
     const product = await Product.findByIdAndUpdate(
@@ -56,18 +47,25 @@ const updateProductDetails = asyncHandler(async (req, res) => {
       { new: true }
     )
 
-    await product.save()
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' })
+    }
 
     res.json(product)
   } catch (error) {
     console.error(error)
-    res.status(400).json(error.message)
+    res.status(400).json({ error: error.message })
   }
 })
 
 const removeProduct = asyncHandler(async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id)
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' })
+    }
+
     res.json(product)
   } catch (error) {
     console.error(error)
@@ -78,6 +76,7 @@ const removeProduct = asyncHandler(async (req, res) => {
 const fetchProducts = asyncHandler(async (req, res) => {
   try {
     const pageSize = 6
+    const page = Number(req.query.pageNumber) || 1
 
     const keyword = req.query.keyword
       ? {
@@ -89,13 +88,15 @@ const fetchProducts = asyncHandler(async (req, res) => {
       : {}
 
     const count = await Product.countDocuments({ ...keyword })
-    const products = await Product.find({ ...keyword }).limit(pageSize)
+    const products = await Product.find({ ...keyword })
+      .limit(pageSize)
+      .skip(pageSize * (page - 1))
 
     res.json({
       products,
-      page: 1,
+      page,
       pages: Math.ceil(count / pageSize),
-      hasMore: false,
+      hasMore: page * pageSize < count,
     })
   } catch (error) {
     console.error(error)
@@ -109,8 +110,7 @@ const fetchProductById = asyncHandler(async (req, res) => {
     if (product) {
       return res.json(product)
     } else {
-      res.status(404)
-      throw new Error('Product not found')
+      res.status(404).json({ error: 'Product not found' })
     }
   } catch (error) {
     console.error(error)
@@ -123,7 +123,7 @@ const fetchAllProducts = asyncHandler(async (req, res) => {
     const products = await Product.find({})
       .populate('category')
       .limit(12)
-      .sort({ createAt: -1 })
+      .sort({ createdAt: -1 })
 
     res.json(products)
   } catch (error) {
@@ -155,9 +155,7 @@ const addProductReview = asyncHandler(async (req, res) => {
       }
 
       product.reviews.push(review)
-
       product.numReviews = product.reviews.length
-
       product.rating =
         product.reviews.reduce((acc, item) => item.rating + acc, 0) /
         product.reviews.length
@@ -165,12 +163,11 @@ const addProductReview = asyncHandler(async (req, res) => {
       await product.save()
       res.status(201).json({ message: 'Review added' })
     } else {
-      res.status(404)
-      throw new Error('Product not found')
+      res.status(404).json({ error: 'Product not found' })
     }
   } catch (error) {
     console.error(error)
-    res.status(400).json(error.message)
+    res.status(400).json({ error: error.message })
   }
 })
 
@@ -180,17 +177,17 @@ const fetchTopProducts = asyncHandler(async (req, res) => {
     res.json(products)
   } catch (error) {
     console.error(error)
-    res.status(400).json(error.message)
+    res.status(400).json({ error: error.message })
   }
 })
 
 const fetchNewProducts = asyncHandler(async (req, res) => {
   try {
-    const products = await Product.find().sort({ _id: -1 }).limit(5)
+    const products = await Product.find().sort({ createdAt: -1 }).limit(5)
     res.json(products)
   } catch (error) {
     console.error(error)
-    res.status(400).json(error.message)
+    res.status(400).json({ error: error.message })
   }
 })
 
@@ -199,8 +196,9 @@ const filterProducts = asyncHandler(async (req, res) => {
     const { checked, radio } = req.body
 
     let args = {}
-    if (checked.length > 0) args.category = checked
-    if (radio.length) args.price = { $gte: radio[0], $lte: radio[1] }
+    if (checked && checked.length > 0) args.category = checked
+    if (radio && radio.length >= 2)
+      args.price = { $gte: radio[0], $lte: radio[1] }
 
     const products = await Product.find(args)
     res.json(products)
