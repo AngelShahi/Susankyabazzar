@@ -1,6 +1,5 @@
 import express from 'express'
 import {
-  createUser,
   loginUser,
   logoutCurrentUser,
   getAllUsers,
@@ -9,20 +8,25 @@ import {
   deleteUserById,
   getUserById,
   updateUserById,
+  verifyOtpHandler,
+  sendOtp,
 } from '../controllers/userController.js'
 
 import { authenticate, authorizeAdmin } from '../middlewares/authMiddleware.js'
 
 const router = express.Router()
 
-router
-  .route('/')
-  .post(createUser)
-  .get(authenticate, authorizeAdmin, getAllUsers)
+// Routes for creating a user and viewing users (admin only)
+router.route('/').get(authenticate, authorizeAdmin, getAllUsers)
 
 router.post('/auth', loginUser)
 router.post('/logout', logoutCurrentUser)
 
+// backend/routes/userRoutes.js or similar
+router.post('/send-otp', sendOtp)
+router.post('/verify-otp', verifyOtpHandler)
+
+// Routes for profile management
 router
   .route('/profile')
   .get(authenticate, getCurrentUserProfile)

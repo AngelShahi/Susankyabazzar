@@ -7,7 +7,6 @@ import {
 } from '../../redux/api/orderApiSlice'
 
 import { useState, useEffect } from 'react'
-import AdminMenu from './AdminMenu'
 import OrderList from './OrderList'
 import Loader from '../../components/Loader'
 
@@ -105,7 +104,6 @@ const AdminDashboard = () => {
 
   return (
     <>
-      <AdminMenu />
       <section className='xl:ml-[4rem] md:ml-[0rem] bg-white text-gray-800'>
         <div className='w-[80%] flex justify-around flex-wrap'>
           <div className='rounded-lg bg-gray-100 p-5 w-[20rem] mt-5'>

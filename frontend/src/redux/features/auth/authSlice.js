@@ -1,9 +1,18 @@
 import { createSlice } from '@reduxjs/toolkit'
 
+// Safely parse userInfo from localStorage
+let userInfo = null
+try {
+  const stored = localStorage.getItem('userInfo')
+  if (stored && stored !== 'undefined') {
+    userInfo = JSON.parse(stored)
+  }
+} catch (error) {
+  console.error('Error parsing userInfo from localStorage:', error)
+}
+
 const initialState = {
-  userInfo: localStorage.getItem('userInfo')
-    ? JSON.parse(localStorage.getItem('userInfo'))
-    : null,
+  userInfo,
 }
 
 const authSlice = createSlice({
@@ -25,5 +34,8 @@ const authSlice = createSlice({
 })
 
 export const { setCredentials, logout } = authSlice.actions
+
+// ✅ Add this selector
+export const selectCurrentUser = (state) => state.auth.userInfo
 
 export default authSlice.reducer

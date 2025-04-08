@@ -2,35 +2,95 @@ import User from '../models/userModel.js'
 import asyncHandler from '../middlewares/asyncHandler.js'
 import bcrypt from 'bcryptjs'
 import createToken from '../utils/createToken.js'
+import sendEmail from '../utils/sendEmail.js'
+import dotenv from 'dotenv'
 
-const createUser = asyncHandler(async (req, res) => {
+dotenv.config()
+
+// in userController.js
+let tempOtpStore = {} // temp memory store, consider Redis or DB for production
+
+const sendOtp = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body
 
   if (!username || !email || !password) {
-    throw new Error('Please fill all the inputs.')
+    res.status(400)
+    throw new Error('Please fill all the fields')
   }
 
   const userExists = await User.findOne({ email })
-  if (userExists) res.status(400).send('User already exists')
-
-  const salt = await bcrypt.genSalt(10)
-  const hashedPassword = await bcrypt.hash(password, salt)
-  const newUser = new User({ username, email, password: hashedPassword })
-
-  try {
-    await newUser.save()
-    createToken(res, newUser._id)
-
-    res.status(201).json({
-      _id: newUser._id,
-      username: newUser.username,
-      email: newUser.email,
-      isAdmin: newUser.isAdmin,
-    })
-  } catch (error) {
+  if (userExists) {
     res.status(400)
-    throw new Error('Invalid user data')
+    throw new Error('User already exists')
   }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString()
+  const expiry = Date.now() + 10 * 60 * 1000
+
+  // Save temporarily in memory (use Redis in production)
+  tempOtpStore[email] = {
+    otp,
+    expiry,
+    username,
+    password, // store raw, hash later
+  }
+
+  const message = `
+    <h2>Hello ${username},</h2>
+    <p>Your OTP is: <strong>${otp}</strong></p>
+    <p>This code expires in 10 minutes.</p>
+  `
+
+  await sendEmail({
+    email,
+    subject: 'Your OTP Code',
+    html: message,
+  })
+
+  res.status(200).json({ message: 'OTP sent to email' })
+})
+
+const verifyOtpHandler = asyncHandler(async (req, res) => {
+  const { email, otp } = req.body
+
+  const data = tempOtpStore[email]
+  if (!data) {
+    res.status(400)
+    throw new Error('No OTP request found for this email')
+  }
+
+  const { otp: validOtp, expiry, username, password } = data
+
+  if (Date.now() > expiry) {
+    delete tempOtpStore[email]
+    res.status(400)
+    throw new Error('OTP has expired')
+  }
+
+  if (otp !== validOtp) {
+    res.status(400)
+    throw new Error('Invalid OTP')
+  }
+
+  // All good – create user
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  const newUser = await User.create({
+    username,
+    email,
+    password: hashedPassword,
+    isVerified: true,
+  })
+
+  delete tempOtpStore[email]
+
+  createToken(res, newUser._id)
+
+  res.status(201).json({
+    _id: newUser._id,
+    username: newUser.username,
+    email: newUser.email,
+  })
 })
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -42,6 +102,12 @@ const loginUser = asyncHandler(async (req, res) => {
   const existingUser = await User.findOne({ email })
 
   if (existingUser) {
+    // Check if the user is verified
+    if (!existingUser.isVerified) {
+      res.status(400)
+      throw new Error('Please verify your email before logging in.')
+    }
+
     const isPasswordValid = await bcrypt.compare(
       password,
       existingUser.password
@@ -175,7 +241,6 @@ const updateUserById = asyncHandler(async (req, res) => {
 })
 
 export {
-  createUser,
   loginUser,
   logoutCurrentUser,
   getAllUsers,
@@ -184,4 +249,6 @@ export {
   deleteUserById,
   getUserById,
   updateUserById,
+  verifyOtpHandler,
+  sendOtp,
 }

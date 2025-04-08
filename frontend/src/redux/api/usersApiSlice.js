@@ -12,8 +12,7 @@ export const userApiSlice = apiSlice.injectEndpoints({
     }),
     register: builder.mutation({
       query: (data) => ({
-        url: `${USERS_URL}`,
-        method: 'POST',
+        url: `${USERS_URL}/send-otp`, 
         body: data,
       }),
     }),
@@ -57,16 +56,24 @@ export const userApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['User'],
     }),
+    verifyOtp: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/verify-otp`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 })
 
 export const {
   useLoginMutation,
-  useLogoutMutation,
   useRegisterMutation,
+  useLogoutMutation,
   useProfileMutation,
   useGetUsersQuery,
   useDeleteUserMutation,
-  useUpdateUserMutation,
   useGetUserDetailsQuery,
+  useUpdateUserMutation,
+  useVerifyOtpMutation, // ✅ updated name for consistency
 } = userApiSlice

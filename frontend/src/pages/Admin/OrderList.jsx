@@ -2,7 +2,6 @@ import Message from '../../components/Message'
 import Loader from '../../components/Loader'
 import { Link } from 'react-router-dom'
 import { useGetOrdersQuery } from '../../redux/api/orderApiSlice'
-import AdminMenu from './AdminMenu'
 
 const OrderList = () => {
   const { data: orders, isLoading, error } = useGetOrdersQuery()
@@ -17,7 +16,6 @@ const OrderList = () => {
         </Message>
       ) : (
         <table className='container mx-auto'>
-          <AdminMenu />
 
           <thead className='w-full border'>
             <tr className='mb-[5rem]'>

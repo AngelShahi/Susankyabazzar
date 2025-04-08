@@ -7,6 +7,11 @@ import {
   AiOutlineShoppingCart,
   AiOutlineMenu,
   AiOutlineClose,
+  AiOutlineDashboard,
+  AiOutlineUser,
+  AiOutlineShop,
+  AiOutlineUnorderedList,
+  AiOutlineFileText,
 } from 'react-icons/ai'
 import { FaHeart, FaUserCircle } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
@@ -21,17 +26,21 @@ const Navigation = () => {
   const { cartItems } = useSelector((state) => state.cart)
 
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [showSidebar, setShowSidebar] = useState(false)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [adminDropdownOpen, setAdminDropdownOpen] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth)
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
   const [logoutApiCall] = useLogoutMutation()
 
+  const isAdmin = userInfo && userInfo.isAdmin
+
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768)
+      setWindowWidth(window.innerWidth)
     }
 
     window.addEventListener('resize', handleResize)
@@ -42,8 +51,21 @@ const Navigation = () => {
     setDropdownOpen(!dropdownOpen)
   }
 
-  const toggleSidebar = () => {
-    setShowSidebar(!showSidebar)
+  const toggleAdminDropdown = () => {
+    setAdminDropdownOpen(!adminDropdownOpen)
+  }
+
+  const toggleMobileMenu = () => {
+    setShowMobileMenu(!showMobileMenu)
+  }
+
+  const expandSidebar = () => {
+    setSidebarExpanded(true)
+  }
+
+  const collapseSidebar = () => {
+    setSidebarExpanded(false)
+    setAdminDropdownOpen(false)
   }
 
   const logoutHandler = async () => {
@@ -52,405 +74,414 @@ const Navigation = () => {
       dispatch(logout())
       navigate('/login')
       setDropdownOpen(false)
-      setShowSidebar(false)
+      setAdminDropdownOpen(false)
+      setShowMobileMenu(false)
     } catch (error) {
       console.error(error)
     }
   }
 
-  // Mobile navigation bar at the top
-  const MobileNav = () => (
-    <div className='fixed top-0 left-0 right-0 bg-gray-800 text-white flex justify-between items-center p-4 z-50 shadow-md'>
-      <div className='font-bold text-xl tracking-wider'>TechStore</div>
-      <button onClick={toggleSidebar} aria-label='Toggle menu'>
-        {showSidebar ? (
-          <AiOutlineClose size={24} />
-        ) : (
-          <AiOutlineMenu size={24} />
-        )}
-      </button>
-    </div>
-  )
-
-  return (
-    <>
-      {isMobile && <MobileNav />}
-
-      {/* Mobile Sidebar */}
-      {isMobile && (
+  // Admin Sidebar Component
+  const AdminSidebar = () => (
+    <div
+      className={`fixed left-0 top-0 h-screen bg-gray-900 text-white shadow-lg z-40 transition-all duration-300 ${
+        sidebarExpanded ? 'w-64' : 'w-16'
+      }`}
+      onMouseEnter={expandSidebar}
+      onMouseLeave={collapseSidebar}
+    >
+      <div className='p-4'>
         <div
-          className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ${
-            showSidebar ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          className={`font-bold text-xl tracking-wider ${
+            !sidebarExpanded && 'text-center'
           }`}
         >
-          <div
-            className={`fixed top-0 right-0 h-full w-64 bg-gray-900 text-white transform transition-transform duration-300 ease-in-out shadow-lg ${
-              showSidebar ? 'translate-x-0' : 'translate-x-full'
+          {sidebarExpanded ? 'Admin Panel' : 'AP'}
+        </div>
+      </div>
+
+      <div className='flex flex-col space-y-1 mt-6'>
+        <Link
+          to='/admin/dashboard'
+          className='flex items-center p-3 px-4 rounded-lg hover:bg-gray-800'
+        >
+          <AiOutlineDashboard size={20} />
+          <span
+            className={`ml-3 whitespace-nowrap transition-opacity duration-300 ${
+              sidebarExpanded ? 'opacity-100' : 'opacity-0 absolute'
             }`}
           >
-            <div className='flex justify-end p-4'>
-              <button onClick={toggleSidebar} aria-label='Close menu'>
-                <AiOutlineClose size={24} />
-              </button>
-            </div>
+            Dashboard
+          </span>
+        </Link>
 
-            <div className='flex flex-col px-4 py-2'>
-              <Link
-                to='/'
-                className='flex items-center py-3 hover:bg-gray-800 px-2 rounded-lg'
-                onClick={() => setShowSidebar(false)}
-              >
-                <AiOutlineHome className='mr-3' size={22} />
-                <span>Home</span>
-              </Link>
-
-              <Link
-                to='/shop'
-                className='flex items-center py-3 hover:bg-gray-800 px-2 rounded-lg'
-                onClick={() => setShowSidebar(false)}
-              >
-                <AiOutlineShopping className='mr-3' size={22} />
-                <span>Shop</span>
-              </Link>
-
-              <Link
-                to='/cart'
-                className='flex items-center py-3 hover:bg-gray-800 px-2 rounded-lg'
-                onClick={() => setShowSidebar(false)}
-              >
-                <div className='relative'>
-                  <AiOutlineShoppingCart className='mr-3' size={22} />
-                  {cartItems.length > 0 && (
-                    <span className='absolute -top-2 -right-2 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-800 font-medium rounded-full'>
-                      {cartItems.reduce((a, c) => a + c.qty, 0)}
-                    </span>
-                  )}
-                </div>
-                <span>Cart</span>
-              </Link>
-
-              <Link
-                to='/favorite'
-                className='flex items-center py-3 hover:bg-gray-800 px-2 rounded-lg'
-                onClick={() => setShowSidebar(false)}
-              >
-                <div className='relative'>
-                  <FaHeart className='mr-3' size={18} />
-                  <FavoritesCount />
-                </div>
-                <span>Favorites</span>
-              </Link>
-
-              {userInfo ? (
-                <div className='mt-4 border-t border-gray-700 pt-4'>
-                  <div className='flex items-center mb-4 px-2'>
-                    <FaUserCircle size={20} className='mr-3' />
-                    <span className='font-medium'>{userInfo.username}</span>
-                  </div>
-
-                  {userInfo.isAdmin && (
-                    <div className='bg-gray-800 rounded-lg mb-4 py-2'>
-                      <div className='px-2 py-1 text-sm text-gray-400'>
-                        Admin Panel
-                      </div>
-                      <Link
-                        to='/admin/dashboard'
-                        className='flex items-center px-4 py-2 hover:bg-gray-700 rounded'
-                        onClick={() => setShowSidebar(false)}
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        to='/admin/productlist'
-                        className='flex items-center px-4 py-2 hover:bg-gray-700 rounded'
-                        onClick={() => setShowSidebar(false)}
-                      >
-                        Products
-                      </Link>
-                      <Link
-                        to='/admin/categorylist'
-                        className='flex items-center px-4 py-2 hover:bg-gray-700 rounded'
-                        onClick={() => setShowSidebar(false)}
-                      >
-                        Categories
-                      </Link>
-                      <Link
-                        to='/admin/orderlist'
-                        className='flex items-center px-4 py-2 hover:bg-gray-700 rounded'
-                        onClick={() => setShowSidebar(false)}
-                      >
-                        Orders
-                      </Link>
-                      <Link
-                        to='/admin/userlist'
-                        className='flex items-center px-4 py-2 hover:bg-gray-700 rounded'
-                        onClick={() => setShowSidebar(false)}
-                      >
-                        Users
-                      </Link>
-                    </div>
-                  )}
-
-                  <Link
-                    to='/profile'
-                    className='flex items-center py-3 hover:bg-gray-800 px-2 rounded-lg'
-                    onClick={() => setShowSidebar(false)}
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={logoutHandler}
-                    className='flex items-center py-3 hover:bg-gray-800 px-2 rounded-lg w-full text-left text-red-400'
-                  >
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <div className='mt-4 border-t border-gray-700 pt-4'>
-                  <Link
-                    to='/login'
-                    className='flex items-center py-3 hover:bg-gray-800 px-2 rounded-lg'
-                    onClick={() => setShowSidebar(false)}
-                  >
-                    <AiOutlineLogin className='mr-3' size={22} />
-                    <span>Login</span>
-                  </Link>
-                  <Link
-                    to='/register'
-                    className='flex items-center py-3 hover:bg-gray-800 px-2 rounded-lg'
-                    onClick={() => setShowSidebar(false)}
-                  >
-                    <AiOutlineUserAdd className='mr-3' size={22} />
-                    <span>Register</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Desktop Sidebar */}
-      <div
-        style={{ zIndex: 999 }}
-        className={`hidden md:flex flex-col justify-between p-4 text-white bg-gray-900 h-screen fixed transition-all duration-300 ease-in-out ${
-          showSidebar ? 'w-16' : 'w-16 hover:w-56'
-        }`}
-        id='navigation-container'
-      >
-        <div className='flex flex-col justify-center space-y-6'>
-          <Link
-            to='/'
-            className='flex items-center group py-2 px-1 rounded-lg hover:bg-gray-800'
+        <Link
+          to='/admin/allproductslist'
+          className='flex items-center p-3 px-4 rounded-lg hover:bg-gray-800'
+        >
+          <AiOutlineShop size={20} />
+          <span
+            className={`ml-3 whitespace-nowrap transition-opacity duration-300 ${
+              sidebarExpanded ? 'opacity-100' : 'opacity-0 absolute'
+            }`}
           >
-            <AiOutlineHome className='min-w-[26px]' size={22} />
-            <span
-              className={`ml-3 whitespace-nowrap overflow-hidden transition-all duration-300 ${
-                showSidebar
-                  ? 'w-0 opacity-0'
-                  : 'group-hover:w-24 group-hover:opacity-100'
-              }`}
-            >
-              Home
-            </span>
-          </Link>
+            Products
+          </span>
+        </Link>
 
-          <Link
-            to='/shop'
-            className='flex items-center group py-2 px-1 rounded-lg hover:bg-gray-800'
+        <Link
+          to='/admin/categorylist'
+          className='flex items-center p-3 px-4 rounded-lg hover:bg-gray-800'
+        >
+          <AiOutlineUnorderedList size={20} />
+          <span
+            className={`ml-3 whitespace-nowrap transition-opacity duration-300 ${
+              sidebarExpanded ? 'opacity-100' : 'opacity-0 absolute'
+            }`}
           >
-            <AiOutlineShopping className='min-w-[26px]' size={22} />
-            <span
-              className={`ml-3 whitespace-nowrap overflow-hidden transition-all duration-300 ${
-                showSidebar
-                  ? 'w-0 opacity-0'
-                  : 'group-hover:w-24 group-hover:opacity-100'
-              }`}
-            >
-              Shop
-            </span>
-          </Link>
+            Categories
+          </span>
+        </Link>
 
-          <Link
-            to='/cart'
-            className='flex items-center group py-2 px-1 rounded-lg hover:bg-gray-800'
+        <Link
+          to='/admin/orderlist'
+          className='flex items-center p-3 px-4 rounded-lg hover:bg-gray-800'
+        >
+          <AiOutlineFileText size={20} />
+          <span
+            className={`ml-3 whitespace-nowrap transition-opacity duration-300 ${
+              sidebarExpanded ? 'opacity-100' : 'opacity-0 absolute'
+            }`}
           >
-            <div className='relative min-w-[26px]'>
-              <AiOutlineShoppingCart size={22} />
-              {cartItems.length > 0 && (
-                <span className='absolute -top-2 -right-2 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-800 font-medium rounded-full'>
-                  {cartItems.reduce((a, c) => a + c.qty, 0)}
-                </span>
-              )}
-            </div>
-            <span
-              className={`ml-3 whitespace-nowrap overflow-hidden transition-all duration-300 ${
-                showSidebar
-                  ? 'w-0 opacity-0'
-                  : 'group-hover:w-24 group-hover:opacity-100'
-              }`}
-            >
-              Cart
-            </span>
-          </Link>
+            Orders
+          </span>
+        </Link>
 
-          <Link
-            to='/favorite'
-            className='flex items-center group py-2 px-1 rounded-lg hover:bg-gray-800'
+        <Link
+          to='/admin/userlist'
+          className='flex items-center p-3 px-4 rounded-lg hover:bg-gray-800'
+        >
+          <AiOutlineUser size={20} />
+          <span
+            className={`ml-3 whitespace-nowrap transition-opacity duration-300 ${
+              sidebarExpanded ? 'opacity-100' : 'opacity-0 absolute'
+            }`}
           >
-            <div className='relative min-w-[26px]'>
-              <FaHeart size={18} />
-              <FavoritesCount />
-            </div>
-            <span
-              className={`ml-3 whitespace-nowrap overflow-hidden transition-all duration-300 ${
-                showSidebar
-                  ? 'w-0 opacity-0'
-                  : 'group-hover:w-24 group-hover:opacity-100'
-              }`}
-            >
-              Favorites
-            </span>
-          </Link>
-        </div>
+            Users
+          </span>
+        </Link>
+      </div>
 
+      <div className='absolute bottom-0 left-0 right-0 p-4'>
         <div className='relative'>
-          {userInfo ? (
-            <div className='flex flex-col'>
-              <button
-                onClick={toggleDropdown}
-                className='flex items-center py-2 px-1 rounded-lg hover:bg-gray-800 w-full'
-              >
-                <FaUserCircle className='min-w-[26px]' size={20} />
-                <span
-                  className={`ml-3 whitespace-nowrap overflow-hidden transition-all duration-300 ${
-                    showSidebar
-                      ? 'w-0 opacity-0'
-                      : 'group-hover:w-24 group-hover:opacity-100'
-                  }`}
-                >
-                  {userInfo.username}
-                </span>
-                <svg
-                  xmlns='http://www.w3.org/2000/svg'
-                  className={`h-4 w-4 ml-1 ${
-                    dropdownOpen ? 'transform rotate-180' : ''
-                  } ${showSidebar ? 'hidden' : 'group-hover:inline-block'}`}
-                  fill='none'
-                  viewBox='0 0 24 24'
-                  stroke='currentColor'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    d={dropdownOpen ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'}
-                  />
-                </svg>
-              </button>
-
-              {dropdownOpen && (
-                <div className='absolute bottom-full mb-2 right-0 w-48 bg-white rounded-lg shadow-lg overflow-hidden'>
-                  {userInfo.isAdmin && (
-                    <div className='border-b border-gray-200'>
-                      <div className='px-4 py-2 bg-gray-100 text-gray-500 text-sm font-medium'>
-                        Admin Panel
-                      </div>
-                      <Link
-                        to='/admin/dashboard'
-                        className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        to='/admin/productlist'
-                        className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        Products
-                      </Link>
-                      <Link
-                        to='/admin/categorylist'
-                        className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        Categories
-                      </Link>
-                      <Link
-                        to='/admin/orderlist'
-                        className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        Orders
-                      </Link>
-                      <Link
-                        to='/admin/userlist'
-                        className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        Users
-                      </Link>
-                    </div>
-                  )}
-                  <Link
-                    to='/profile'
-                    className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
-                    onClick={() => setDropdownOpen(false)}
+          <button
+            onClick={toggleAdminDropdown}
+            className='flex items-center w-full p-2 rounded-lg hover:bg-gray-800'
+          >
+            <div className='flex items-center justify-center'>
+              <FaUserCircle size={20} />
+              {sidebarExpanded && (
+                <>
+                  <span className='ml-3 overflow-hidden text-ellipsis'>
+                    {userInfo.username}
+                  </span>
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    className={`h-4 w-4 ml-1 ${
+                      adminDropdownOpen ? 'transform rotate-180' : ''
+                    }`}
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
                   >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={logoutHandler}
-                    className='block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100'
-                  >
-                    Logout
-                  </button>
-                </div>
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth='2'
+                      d={adminDropdownOpen ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'}
+                    />
+                  </svg>
+                </>
               )}
             </div>
-          ) : (
-            <div className='flex flex-col space-y-4'>
+          </button>
+
+          {adminDropdownOpen && sidebarExpanded && (
+            <div className='absolute bottom-full mb-2 left-0 w-full bg-white rounded-lg shadow-lg overflow-hidden'>
               <Link
-                to='/login'
-                className='flex items-center group py-2 px-1 rounded-lg hover:bg-gray-800'
+                to='/profile'
+                className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
+                onClick={() => setAdminDropdownOpen(false)}
               >
-                <AiOutlineLogin className='min-w-[26px]' size={22} />
-                <span
-                  className={`ml-3 whitespace-nowrap overflow-hidden transition-all duration-300 ${
-                    showSidebar
-                      ? 'w-0 opacity-0'
-                      : 'group-hover:w-24 group-hover:opacity-100'
-                  }`}
-                >
-                  Login
-                </span>
+                Profile
               </Link>
-              <Link
-                to='/register'
-                className='flex items-center group py-2 px-1 rounded-lg hover:bg-gray-800'
+              <button
+                onClick={logoutHandler}
+                className='block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100'
               >
-                <AiOutlineUserAdd className='min-w-[26px]' size={22} />
-                <span
-                  className={`ml-3 whitespace-nowrap overflow-hidden transition-all duration-300 ${
-                    showSidebar
-                      ? 'w-0 opacity-0'
-                      : 'group-hover:w-24 group-hover:opacity-100'
-                  }`}
-                >
-                  Register
-                </span>
-              </Link>
+                Logout
+              </button>
             </div>
           )}
         </div>
       </div>
+    </div>
+  )
 
-      {/* Empty space to push content to the right on desktop */}
-      <div className='hidden md:block w-16' />
+  // Customer Top Navigation Bar
+  const CustomerTopNav = () => (
+    <nav className='bg-gray-800 text-white shadow-md'>
+      <div className='max-w-7xl mx-auto px-4'>
+        <div className='flex justify-between h-16'>
+          {/* Logo and main nav links */}
+          <div className='flex'>
+            <div className='flex-shrink-0 flex items-center'>
+              <span className='font-bold text-xl tracking-wider'>
+                TechStore
+              </span>
+            </div>
 
-      {/* Empty space to push content down on mobile */}
-      {isMobile && <div className='h-16' />}
+            {/* Desktop menu */}
+            <div className='hidden md:ml-6 md:flex md:items-center md:space-x-4'>
+              <Link to='/' className='px-3 py-2 rounded-md hover:bg-gray-700'>
+                Home
+              </Link>
+              <Link
+                to='/shop'
+                className='px-3 py-2 rounded-md hover:bg-gray-700'
+              >
+                Shop
+              </Link>
+            </div>
+          </div>
+
+          {/* Right side nav items */}
+          <div className='hidden md:flex items-center'>
+            <Link
+              to='/cart'
+              className='relative px-3 py-2 rounded-md hover:bg-gray-700'
+            >
+              <div className='flex items-center'>
+                <AiOutlineShoppingCart size={20} />
+                <span className='ml-1'>Cart</span>
+                {cartItems.length > 0 && (
+                  <span className='absolute top-0 right-0 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-800 font-medium rounded-full'>
+                    {cartItems.reduce((a, c) => a + c.qty, 0)}
+                  </span>
+                )}
+              </div>
+            </Link>
+
+            <Link
+              to='/favorite'
+              className='relative px-3 py-2 rounded-md hover:bg-gray-700'
+            >
+              <div className='flex items-center'>
+                <FaHeart size={16} />
+                <span className='ml-1'>Favorites</span>
+                <FavoritesCount />
+              </div>
+            </Link>
+
+            {userInfo ? (
+              <div className='relative ml-3'>
+                <button
+                  onClick={toggleDropdown}
+                  className='flex items-center px-3 py-2 rounded-md hover:bg-gray-700'
+                >
+                  <FaUserCircle size={20} className='mr-1' />
+                  <span>{userInfo.username}</span>
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    className={`h-4 w-4 ml-1 ${
+                      dropdownOpen ? 'transform rotate-180' : ''
+                    }`}
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth='2'
+                      d={dropdownOpen ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'}
+                    />
+                  </svg>
+                </button>
+
+                {dropdownOpen && (
+                  <div className='absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50'>
+                    {userInfo.isAdmin && (
+                      <Link
+                        to='/admin/dashboard'
+                        className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <Link
+                      to='/profile'
+                      className='block px-4 py-2 text-gray-700 hover:bg-gray-100'
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      onClick={logoutHandler}
+                      className='block w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100'
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className='flex items-center space-x-2 ml-3'>
+                <Link
+                  to='/login'
+                  className='px-3 py-2 rounded-md hover:bg-gray-700'
+                >
+                  Login
+                </Link>
+                <Link
+                  to='/register'
+                  className='px-3 py-2 rounded-md bg-gray-700 hover:bg-gray-600'
+                >
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className='flex items-center md:hidden'>
+            <button
+              onClick={toggleMobileMenu}
+              className='inline-flex items-center justify-center p-2 rounded-md text-white hover:bg-gray-700'
+              aria-label='Toggle menu'
+            >
+              {showMobileMenu ? (
+                <AiOutlineClose size={24} />
+              ) : (
+                <AiOutlineMenu size={24} />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {showMobileMenu && (
+        <div className='md:hidden'>
+          <div className='px-2 pt-2 pb-3 space-y-1'>
+            <Link
+              to='/'
+              className='block px-3 py-2 rounded-md hover:bg-gray-700'
+              onClick={() => setShowMobileMenu(false)}
+            >
+              Home
+            </Link>
+            <Link
+              to='/shop'
+              className='block px-3 py-2 rounded-md hover:bg-gray-700'
+              onClick={() => setShowMobileMenu(false)}
+            >
+              Shop
+            </Link>
+            <Link
+              to='/cart'
+              className='block px-3 py-2 rounded-md hover:bg-gray-700'
+              onClick={() => setShowMobileMenu(false)}
+            >
+              <div className='flex items-center'>
+                <AiOutlineShoppingCart size={20} className='mr-2' />
+                <span>Cart</span>
+                {cartItems.length > 0 && (
+                  <span className='ml-2 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-800 font-medium rounded-full'>
+                    {cartItems.reduce((a, c) => a + c.qty, 0)}
+                  </span>
+                )}
+              </div>
+            </Link>
+            <Link
+              to='/favorite'
+              className='block px-3 py-2 rounded-md hover:bg-gray-700'
+              onClick={() => setShowMobileMenu(false)}
+            >
+              <div className='flex items-center'>
+                <FaHeart size={16} className='mr-2' />
+                <span>Favorites</span>
+              </div>
+            </Link>
+            {userInfo ? (
+              <>
+                <Link
+                  to='/profile'
+                  className='block px-3 py-2 rounded-md hover:bg-gray-700'
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  Profile
+                </Link>
+                {userInfo.isAdmin && (
+                  <Link
+                    to='/admin/dashboard'
+                    className='block px-3 py-2 rounded-md hover:bg-gray-700'
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
+                <button
+                  onClick={logoutHandler}
+                  className='block w-full text-left px-3 py-2 rounded-md hover:bg-gray-700 text-red-400'
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to='/login'
+                  className='block px-3 py-2 rounded-md hover:bg-gray-700'
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  to='/register'
+                  className='block px-3 py-2 rounded-md hover:bg-gray-700'
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  Register
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </nav>
+  )
+
+  return (
+    <>
+      {isAdmin ? (
+        <>
+          <AdminSidebar />
+          {/* Empty space to push content away from sidebar - adjusts based on sidebar state */}
+          <div
+            className={`transition-all duration-300 ${
+              sidebarExpanded ? 'ml-64' : 'ml-16'
+            }`}
+          />
+        </>
+      ) : (
+        <>
+          <CustomerTopNav />
+          {/* Space after the fixed navbar on smaller screens */}
+          <div className={showMobileMenu ? 'h-64 md:h-16' : 'h-16'} />
+        </>
+      )}
     </>
   )
 }
