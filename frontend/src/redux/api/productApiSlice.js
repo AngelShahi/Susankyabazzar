@@ -21,6 +21,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
 
     allProducts: builder.query({
       query: () => `${PRODUCT_URL}/allproducts`,
+      providesTags: ['Products'],
     }),
 
     getProductDetails: builder.query({
@@ -28,6 +29,9 @@ export const productApiSlice = apiSlice.injectEndpoints({
         url: `${PRODUCT_URL}/${productId}`,
       }),
       keepUnusedDataFor: 5,
+      providesTags: (result, error, productId) => [
+        { type: 'Product', id: productId },
+      ],
     }),
 
     createProduct: builder.mutation({
@@ -36,7 +40,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: productData,
       }),
-      invalidatesTags: ['Product', 'Products'],
+      invalidatesTags: ['Products', 'Product'],
     }),
 
     updateProduct: builder.mutation({
@@ -45,7 +49,19 @@ export const productApiSlice = apiSlice.injectEndpoints({
         method: 'PUT',
         body: formData,
       }),
-      invalidatesTags: ['Product', 'Products'],
+      // Force a refresh of the product data after update
+      invalidatesTags: (result, error, { productId }) => [
+        { type: 'Product', id: productId },
+        'Products',
+      ],
+      // Add transformResponse to ensure quantity is properly handled
+      transformResponse: (response) => {
+        // Make sure quantity is returned as a number
+        if (response && response.quantity) {
+          response.quantity = Number(response.quantity)
+        }
+        return response
+      },
     }),
 
     uploadProductImage: builder.mutation({
@@ -77,21 +93,23 @@ export const productApiSlice = apiSlice.injectEndpoints({
 
     getTopProducts: builder.query({
       query: () => `${PRODUCT_URL}/top`,
+      providesTags: ['Products'],
       keepUnusedDataFor: 5,
     }),
 
     getNewProducts: builder.query({
       query: () => `${PRODUCT_URL}/new`,
+      providesTags: ['Products'],
       keepUnusedDataFor: 5,
     }),
 
-    // Changed back to a query to maintain compatibility with existing code
     getFilteredProducts: builder.query({
       query: ({ checked, radio }) => ({
         url: `${PRODUCT_URL}/filtered-products`,
         method: 'POST',
         body: { checked, radio },
       }),
+      providesTags: ['Products'],
     }),
   }),
 })
@@ -108,5 +126,5 @@ export const {
   useGetTopProductsQuery,
   useGetNewProductsQuery,
   useUploadProductImageMutation,
-  useGetFilteredProductsQuery, // Changed back to Query to match existing imports
+  useGetFilteredProductsQuery,
 } = productApiSlice

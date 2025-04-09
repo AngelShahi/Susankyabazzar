@@ -21,16 +21,26 @@ const productSchema = mongoose.Schema(
     image: { type: String, required: true },
     brand: { type: String, required: true },
     quantity: { type: Number, required: true }, // Main inventory field
+    stock: { type: Boolean, default: true },
     category: { type: ObjectId, ref: 'Category', required: true },
     description: { type: String, required: true },
     reviews: [reviewSchema],
     rating: { type: Number, required: true, default: 0 },
     numReviews: { type: Number, required: true, default: 0 },
     price: { type: Number, required: true, default: 0 },
-    // Removed redundant countInStock field as quantity serves the same purpose
   },
   { timestamps: true }
 )
+
+// Enforce consistent stock calculation
+productSchema.pre('save', function (next) {
+  // If quantity is 0 or less, set stock to false, otherwise true
+  // Only update stock if it's not explicitly set (allows admin override)
+  if (this.isModified('quantity')) {
+    this.stock = this.quantity > 0
+  }
+  next()
+})
 
 const Product = mongoose.model('Product', productSchema)
 export default Product

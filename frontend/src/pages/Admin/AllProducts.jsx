@@ -3,10 +3,17 @@ import { Link } from 'react-router-dom'
 import { useAllProductsQuery } from '../../redux/api/productApiSlice'
 
 const AllProducts = () => {
-  const { data: products, isLoading, isError } = useAllProductsQuery()
+  // Add refetch to get the function to manually refresh data
+  const { data: products, isLoading, isError, refetch } = useAllProductsQuery()
   const [filteredProducts, setFilteredProducts] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All Categories')
+
+  // Refetch data when component mounts
+  useEffect(() => {
+    // Force refresh data when component mounts
+    refetch()
+  }, [refetch])
 
   // Extract unique categories from products
   const categories = products
@@ -76,12 +83,34 @@ const AllProducts = () => {
         <h1 className='text-3xl font-bold mb-4 md:mb-0 text-gray-800'>
           Products
         </h1>
-        <Link
-          to='/admin/product/create'
-          className='bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors duration-200'
-        >
-          <span className='mr-1 text-lg'>+</span> Create Product
-        </Link>
+        <div className='flex gap-3'>
+          <button
+            onClick={() => refetch()}
+            className='bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors duration-200'
+          >
+            <svg
+              className='w-4 h-4 mr-1'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+              xmlns='http://www.w3.org/2000/svg'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+              />
+            </svg>
+            Refresh
+          </button>
+          <Link
+            to='/admin/productlist'
+            className='bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors duration-200'
+          >
+            <span className='mr-1 text-lg'>+</span> Create Product
+          </Link>
+        </div>
       </div>
 
       <div className='flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4'>
@@ -157,10 +186,10 @@ const AllProducts = () => {
                   Price
                 </th>
                 <th className='py-4 px-6 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider'>
-                  Stock
+                  Quantity
                 </th>
                 <th className='py-4 px-6 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider'>
-                  Status
+                  Stock
                 </th>
                 <th className='py-4 px-6 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider'>
                   Actions
@@ -191,17 +220,17 @@ const AllProducts = () => {
                       : '0.00'}
                   </td>
                   <td className='py-4 px-6 text-sm text-gray-500'>
-                    {product.countInStock || 0}
+                    {product.quantity || 0}
                   </td>
                   <td className='py-4 px-6 text-sm'>
                     <span
                       className={`px-3 py-1 text-xs font-medium rounded-full ${
-                        product.isActive
+                        product.stock
                           ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                          : 'bg-red-100 text-red-800'
                       }`}
                     >
-                      {product.isActive ? 'Active' : 'Draft'}
+                      {product.stock ? 'In Stock' : 'Out of Stock'}
                     </span>
                   </td>
                   <td className='py-4 px-6'>

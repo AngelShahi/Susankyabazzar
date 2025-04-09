@@ -71,7 +71,7 @@ const Order = () => {
       // Admin function to mark order as paid
       await payOrder({
         orderId,
-        email_address: order.user.email,
+        email_address: order.user?.email || '',
       }).unwrap()
       refetch()
       toast.success('Order has been marked as paid')
@@ -167,15 +167,20 @@ const Order = () => {
             <span className='text-gray-600'>{order._id}</span>
           </p>
 
-          <p className='mb-3'>
-            <strong className='text-gray-700'>Name:</strong>{' '}
-            <span className='text-gray-600'>{order.user.username}</span>
-          </p>
+          {/* Fixed: Added conditional check for order.user */}
+          {order.user && (
+            <>
+              <p className='mb-3'>
+                <strong className='text-gray-700'>Name:</strong>{' '}
+                <span className='text-gray-600'>{order.user.username}</span>
+              </p>
 
-          <p className='mb-3'>
-            <strong className='text-gray-700'>Email:</strong>{' '}
-            <span className='text-gray-600'>{order.user.email}</span>
-          </p>
+              <p className='mb-3'>
+                <strong className='text-gray-700'>Email:</strong>{' '}
+                <span className='text-gray-600'>{order.user.email}</span>
+              </p>
+            </>
+          )}
 
           <p className='mb-3'>
             <strong className='text-gray-700'>Address:</strong>{' '}
@@ -239,7 +244,7 @@ const Order = () => {
         </div>
 
         {/* Payment proof section for customers */}
-        {!order.isPaid && !userInfo.isAdmin && (
+        {!order.isPaid && userInfo && !userInfo.isAdmin && (
           <div className='border border-gray-200 rounded-lg shadow-sm p-4 mb-6 bg-white'>
             <h3 className='text-lg font-bold mb-3 pb-2 border-b border-gray-200 text-gray-800'>
               Upload Payment Proof

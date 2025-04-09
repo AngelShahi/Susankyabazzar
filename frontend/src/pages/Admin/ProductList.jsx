@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   useCreateProductMutation,
@@ -7,7 +7,8 @@ import {
 import { useFetchCategoriesQuery } from '../../redux/api/categoryApiSlice'
 import { toast } from 'react-toastify'
 
-const ProductList = () => {
+const ProductForm = () => {
+  // Renamed from ProductList to better reflect its function
   const [image, setImage] = useState('')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -15,8 +16,14 @@ const ProductList = () => {
   const [category, setCategory] = useState('')
   const [quantity, setQuantity] = useState('')
   const [brand, setBrand] = useState('')
+  const [stock, setStock] = useState(true) // Added stock state
   const [imageUrl, setImageUrl] = useState(null)
   const navigate = useNavigate()
+
+  // Update stock when quantity changes
+  useEffect(() => {
+    setStock(Number(quantity) > 0)
+  }, [quantity])
 
   const [uploadProductImage] = useUploadProductImageMutation()
   const [createProduct] = useCreateProductMutation()
@@ -34,7 +41,7 @@ const ProductList = () => {
       productData.append('category', category)
       productData.append('quantity', quantity)
       productData.append('brand', brand)
-      // Removed countInStock as we're using quantity for inventory tracking
+      productData.append('stock', stock) // Add stock to form data
 
       const { data } = await createProduct(productData)
 
@@ -51,6 +58,7 @@ const ProductList = () => {
   }
 
   const uploadFileHandler = async (e) => {
+    // Upload handler remains the same
     const formData = new FormData()
     formData.append('image', e.target.files[0])
 
@@ -72,6 +80,7 @@ const ProductList = () => {
             Create Product
           </div>
 
+          {/* Image preview and upload section remains the same */}
           {imageUrl && (
             <div className='text-center'>
               <img
@@ -138,6 +147,24 @@ const ProductList = () => {
               </div>
             </div>
 
+            {/* Added stock status dropdown */}
+            <div className='flex flex-wrap mt-3'>
+              <div className='one'>
+                <label htmlFor='stock'>Stock Status</label> <br />
+                <select
+                  className='p-4 mb-3 w-[30rem] border rounded-lg bg-gray-100 text-black'
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value === 'true')}
+                >
+                  <option value='true'>In Stock</option>
+                  <option value='false'>Out of Stock</option>
+                </select>
+                <p className='text-sm text-gray-500'>
+                  This will automatically update based on quantity
+                </p>
+              </div>
+            </div>
+
             <label htmlFor='' className='my-5'>
               Description
             </label>
@@ -179,4 +206,4 @@ const ProductList = () => {
   )
 }
 
-export default ProductList
+export default ProductForm // Renamed component
