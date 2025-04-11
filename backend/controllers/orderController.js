@@ -205,6 +205,17 @@ const markOrderAsPaid = async (req, res) => {
         throw new Error('Payment proof image is required')
       }
 
+      // Update inventory for each ordered item
+      for (const item of order.orderItems) {
+        const product = await Product.findById(item.product)
+        if (product) {
+          // Decrease quantity based on order amount
+          product.quantity = Math.max(0, product.quantity - item.qty)
+          // Pre-save hook will automatically update the stock boolean
+          await product.save()
+        }
+      }
+
       order.isPaid = true
       order.paidAt = Date.now()
       order.paymentResult = {

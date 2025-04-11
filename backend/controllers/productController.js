@@ -200,8 +200,10 @@ const addProductReview = asyncHandler(async (req, res) => {
       )
 
       if (alreadyReviewed) {
-        res.status(400)
-        throw new Error('Product already reviewed')
+        // Return a clean 400 response with a clear message instead of throwing an error
+        return res
+          .status(400)
+          .json({ error: 'You have already reviewed this product' })
       }
 
       const review = {

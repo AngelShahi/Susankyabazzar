@@ -4,6 +4,7 @@ import Ratings from './Ratings'
 import { useGetTopProductsQuery } from '../../redux/api/productApiSlice'
 import SmallProduct from './SmallProduct'
 import Loader from '../../components/Loader'
+import Message from '../../components/Message'
 
 const ProductTabs = ({
   loadingProductReview,
@@ -26,6 +27,14 @@ const ProductTabs = ({
   const handleTabClick = (tabNumber) => {
     setActiveTab(tabNumber)
   }
+
+  // Check if the current user has already reviewed this product
+  const hasUserReviewed =
+    userInfo &&
+    product.reviews.some(
+      (review) =>
+        review.user === userInfo._id || review.user?._id === userInfo._id
+    )
 
   return (
     <div className='w-full'>
@@ -70,7 +79,27 @@ const ProductTabs = ({
         {/* Write Review Tab */}
         {activeTab === 1 && (
           <div className='max-w-2xl'>
-            {userInfo ? (
+            {!userInfo ? (
+              <div className='bg-gray-50 p-6 rounded-lg border border-gray-200'>
+                <p className='text-gray-700'>
+                  Please{' '}
+                  <Link
+                    to='/login'
+                    className='text-gray-800 font-medium hover:underline'
+                  >
+                    sign in
+                  </Link>{' '}
+                  to write a review.
+                </p>
+              </div>
+            ) : hasUserReviewed ? (
+              <div className='bg-yellow-50 p-6 rounded-lg border border-yellow-200'>
+                <p className='text-yellow-700'>
+                  You have already submitted a review for this product. Thank
+                  you for your feedback!
+                </p>
+              </div>
+            ) : (
               <form onSubmit={submitHandler} className='space-y-6'>
                 <div>
                   <label
@@ -125,19 +154,6 @@ const ProductTabs = ({
                   {loadingProductReview ? 'Submitting...' : 'Submit Review'}
                 </button>
               </form>
-            ) : (
-              <div className='bg-gray-50 p-6 rounded-lg border border-gray-200'>
-                <p className='text-gray-700'>
-                  Please{' '}
-                  <Link
-                    to='/login'
-                    className='text-gray-800 font-medium hover:underline'
-                  >
-                    sign in
-                  </Link>{' '}
-                  to write a review.
-                </p>
-              </div>
             )}
           </div>
         )}

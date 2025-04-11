@@ -35,7 +35,6 @@ const productSchema = mongoose.Schema(
 // Enforce consistent stock calculation
 productSchema.pre('save', function (next) {
   // If quantity is 0 or less, set stock to false, otherwise true
-  // Only update stock if it's not explicitly set (allows admin override)
   if (this.isModified('quantity')) {
     this.stock = this.quantity > 0
   }
