@@ -1,9 +1,13 @@
+// Importing necessary modules and models
 import asyncHandler from '../middlewares/asyncHandler.js'
 import Product from '../models/productModel.js'
 
-// Modified validator to only check fields that are provided
+/**
+ * Validates product fields.
+ * If creating a new product (isUpdate = false), all fields are required.
+ * If updating, only validate the fields that are provided (e.g., price/quantity must be numbers).
+ */
 const validateProductFields = (fields, isUpdate = false) => {
-  // If creating a new product, all fields are required
   if (!isUpdate) {
     const { name, description, price, category, quantity, brand, image } =
       fields
@@ -15,11 +19,7 @@ const validateProductFields = (fields, isUpdate = false) => {
     if (!category) return 'Category is required'
     if (!quantity) return 'Quantity is required'
     if (!image) return 'Image is required'
-  }
-
-  // For updates, we only validate the fields that are provided
-  else {
-    // Validate any provided fields
+  } else {
     if (fields.price && isNaN(Number(fields.price)))
       return 'Price must be a number'
     if (fields.quantity && isNaN(Number(fields.quantity)))
@@ -29,18 +29,21 @@ const validateProductFields = (fields, isUpdate = false) => {
   return null
 }
 
+/**
+ * @desc    Create a new product
+ * @route   POST /api/products
+ * @access  Private/Admin
+ */
 const addProduct = asyncHandler(async (req, res) => {
   try {
-    // Validate required fields
     const validationError = validateProductFields(req.fields)
     if (validationError) {
       return res.status(400).json({ error: validationError })
     }
 
-    // Create new product with auto-calculated stock based on quantity
+    // Automatically sets stock based on quantity via pre-save middleware
     const product = new Product({ ...req.fields })
 
-    // The pre-save middleware will automatically set stock based on quantity
     await product.save()
     res.status(201).json(product)
   } catch (error) {
@@ -49,24 +52,25 @@ const addProduct = asyncHandler(async (req, res) => {
   }
 })
 
+/**
+ * @desc    Update an existing product
+ * @route   PUT /api/products/:id
+ * @access  Private/Admin
+ */
 const updateProductDetails = asyncHandler(async (req, res) => {
   try {
     console.log('Received update request for product:', req.params.id)
     console.log('Raw incoming fields:', JSON.stringify(req.fields))
 
-    // Get existing product first
     const existingProduct = await Product.findById(req.params.id)
-
     if (!existingProduct) {
       return res.status(404).json({ error: 'Product not found' })
     }
 
-    // Create a copy of the fields for processing
     const processedFields = { ...req.fields }
 
-    // Handle quantity explicitly to prevent type issues
+    // Normalize quantity to a number and update stock status accordingly
     if (processedFields.quantity !== undefined) {
-      // Force quantity to be a number with integer conversion
       const rawQuantity = processedFields.quantity
       processedFields.quantity = parseInt(rawQuantity, 10)
 
@@ -74,16 +78,13 @@ const updateProductDetails = asyncHandler(async (req, res) => {
         `Processing quantity: Original=${rawQuantity}, Parsed=${processedFields.quantity}`
       )
 
-      // Handle NaN case
       if (isNaN(processedFields.quantity)) {
         processedFields.quantity = 0
       }
 
-      // Update stock status based on quantity
       processedFields.stock = processedFields.quantity > 0
     }
 
-    // Validate the processed fields
     const validationError = validateProductFields(processedFields, true)
     if (validationError) {
       return res.status(400).json({ error: validationError })
@@ -91,22 +92,19 @@ const updateProductDetails = asyncHandler(async (req, res) => {
 
     console.log('Final fields to update:', JSON.stringify(processedFields))
 
-    // Find and update the product
+    // Update product in DB and return the updated document
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       { $set: processedFields },
       { new: true, runValidators: true }
     )
 
-    console.log(
-      'Updated product:',
-      JSON.stringify({
-        id: product._id,
-        name: product.name,
-        quantity: product.quantity,
-        stock: product.stock,
-      })
-    )
+    console.log('Updated product:', {
+      id: product._id,
+      name: product.name,
+      quantity: product.quantity,
+      stock: product.stock,
+    })
 
     res.json(product)
   } catch (error) {
@@ -115,6 +113,11 @@ const updateProductDetails = asyncHandler(async (req, res) => {
   }
 })
 
+/**
+ * @desc    Delete a product
+ * @route   DELETE /api/products/:id
+ * @access  Private/Admin
+ */
 const removeProduct = asyncHandler(async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id)
@@ -130,6 +133,11 @@ const removeProduct = asyncHandler(async (req, res) => {
   }
 })
 
+/**
+ * @desc    Fetch paginated products with optional search
+ * @route   GET /api/products
+ * @access  Public
+ */
 const fetchProducts = asyncHandler(async (req, res) => {
   try {
     const pageSize = 6
@@ -161,6 +169,11 @@ const fetchProducts = asyncHandler(async (req, res) => {
   }
 })
 
+/**
+ * @desc    Get a product by ID
+ * @route   GET /api/products/:id
+ * @access  Public
+ */
 const fetchProductById = asyncHandler(async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
@@ -175,6 +188,11 @@ const fetchProductById = asyncHandler(async (req, res) => {
   }
 })
 
+/**
+ * @desc    Fetch all products (limited, newest first)
+ * @route   GET /api/products/all
+ * @access  Public
+ */
 const fetchAllProducts = asyncHandler(async (req, res) => {
   try {
     const products = await Product.find({})
@@ -189,6 +207,11 @@ const fetchAllProducts = asyncHandler(async (req, res) => {
   }
 })
 
+/**
+ * @desc    Add a review to a product
+ * @route   POST /api/products/:id/reviews
+ * @access  Private
+ */
 const addProductReview = asyncHandler(async (req, res) => {
   try {
     const { rating, comment } = req.body
@@ -200,7 +223,6 @@ const addProductReview = asyncHandler(async (req, res) => {
       )
 
       if (alreadyReviewed) {
-        // Return a clean 400 response with a clear message instead of throwing an error
         return res
           .status(400)
           .json({ error: 'You have already reviewed this product' })
@@ -230,6 +252,11 @@ const addProductReview = asyncHandler(async (req, res) => {
   }
 })
 
+/**
+ * @desc    Fetch top rated products
+ * @route   GET /api/products/top
+ * @access  Public
+ */
 const fetchTopProducts = asyncHandler(async (req, res) => {
   try {
     const products = await Product.find({}).sort({ rating: -1 }).limit(4)
@@ -240,6 +267,11 @@ const fetchTopProducts = asyncHandler(async (req, res) => {
   }
 })
 
+/**
+ * @desc    Fetch most recent products
+ * @route   GET /api/products/new
+ * @access  Public
+ */
 const fetchNewProducts = asyncHandler(async (req, res) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 }).limit(5)
@@ -250,6 +282,11 @@ const fetchNewProducts = asyncHandler(async (req, res) => {
   }
 })
 
+/**
+ * @desc    Filter products by category and price range
+ * @route   POST /api/products/filter
+ * @access  Public
+ */
 const filterProducts = asyncHandler(async (req, res) => {
   try {
     const { checked, radio } = req.body
@@ -267,6 +304,7 @@ const filterProducts = asyncHandler(async (req, res) => {
   }
 })
 
+// Exporting all controller functions
 export {
   addProduct,
   updateProductDetails,

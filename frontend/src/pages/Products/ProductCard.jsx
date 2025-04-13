@@ -5,15 +5,26 @@ import { toast } from 'react-toastify'
 import HeartIcon from './HeartIcon'
 import { useAddToCartMutation } from '../../redux/features/cart/cartApiSlice'
 import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 
 const ProductCard = ({ p }) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { userInfo } = useSelector((state) => state.auth)
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
 
   const [addToCartApi] = useAddToCartMutation()
 
   const addToCartHandler = async (product, qty) => {
+    // Check if product is out of stock
+    if (product.quantity <= 0) {
+      toast.error('This item is currently out of stock', {
+        position: 'top-right',
+        autoClose: 3000,
+      })
+      return
+    }
+
     if (!userInfo) {
       // If user is not logged in, redirect to login
       navigate('/login')
@@ -21,6 +32,7 @@ const ProductCard = ({ p }) => {
     }
 
     try {
+      setIsAddingToCart(true)
       await addToCartApi({
         _id: product._id,
         name: product.name,
@@ -28,7 +40,7 @@ const ProductCard = ({ p }) => {
         price: product.price,
         qty,
         product: product._id,
-        countInStock: product.countInStock,
+        countInStock: product.quantity, // Using quantity as countInStock
       })
 
       toast.success('Item added successfully', {
@@ -40,6 +52,8 @@ const ProductCard = ({ p }) => {
         position: 'top-right',
         autoClose: 2000,
       })
+    } finally {
+      setIsAddingToCart(false)
     }
   }
 
@@ -47,6 +61,18 @@ const ProductCard = ({ p }) => {
     <div className='w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow transition-transform hover:scale-105 hover:shadow-lg'>
       <section className='relative'>
         <Link to={`/product/${p._id}`}>
+          {/* Stock indicator badge */}
+          {p.quantity <= 0 && (
+            <span className='absolute top-3 left-3 bg-red-500 text-white text-xs font-medium px-2.5 py-0.5 rounded-full z-10'>
+              Out of Stock
+            </span>
+          )}
+          {p.quantity > 0 && p.quantity <= 5 && (
+            <span className='absolute top-3 left-3 bg-yellow-500 text-white text-xs font-medium px-2.5 py-0.5 rounded-full z-10'>
+              Low Stock: {p.quantity} left
+            </span>
+          )}
+
           <span className='absolute bottom-3 right-3 bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full'>
             {p?.brand}
           </span>
@@ -101,12 +127,44 @@ const ProductCard = ({ p }) => {
             </svg>
           </Link>
 
+          {/* Conditional rendering of Add to Cart button based on stock */}
           <button
-            className='p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors'
+            className={`p-2 rounded-full ${
+              p.quantity <= 0
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : isAddingToCart
+                ? 'bg-gray-300 text-gray-500 cursor-wait'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors'
+            }`}
             onClick={() => addToCartHandler(p, 1)}
-            aria-label='Add to cart'
+            disabled={p.quantity <= 0 || isAddingToCart}
+            aria-label={p.quantity <= 0 ? 'Out of stock' : 'Add to cart'}
+            title={p.quantity <= 0 ? 'Out of stock' : 'Add to cart'}
           >
-            <AiOutlineShoppingCart size={22} />
+            {isAddingToCart ? (
+              <svg
+                className='animate-spin h-5 w-5 text-gray-500'
+                xmlns='http://www.w3.org/2000/svg'
+                fill='none'
+                viewBox='0 0 24 24'
+              >
+                <circle
+                  className='opacity-25'
+                  cx='12'
+                  cy='12'
+                  r='10'
+                  stroke='currentColor'
+                  strokeWidth='4'
+                ></circle>
+                <path
+                  className='opacity-75'
+                  fill='currentColor'
+                  d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                ></path>
+              </svg>
+            ) : (
+              <AiOutlineShoppingCart size={22} />
+            )}
           </button>
         </div>
       </div>
