@@ -31,11 +31,16 @@ const Login = () => {
     e.preventDefault()
     try {
       const res = await login({ email, password }).unwrap()
-      console.log(res)
       dispatch(setCredentials({ ...res }))
-      navigate(redirect)
+
+      if (redirect === '/') {
+        navigate(redirect, { replace: true })
+        window.location.reload()
+      } else {
+        navigate(redirect)
+      }
     } catch (err) {
-      console.log('Error:', err) // Logs the full error object
+      console.log('Error:', err)
       toast.error(err?.data?.message || err.error)
     }
   }

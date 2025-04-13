@@ -1,20 +1,46 @@
 import { Link } from 'react-router-dom'
 import { AiOutlineShoppingCart } from 'react-icons/ai'
-import { useDispatch } from 'react-redux'
-import { addToCart } from '../../redux/features/cart/cartSlice'
+import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
 import HeartIcon from './HeartIcon'
+import { useAddToCartMutation } from '../../redux/features/cart/cartApiSlice'
+import { useNavigate } from 'react-router-dom'
 
 const ProductCard = ({ p }) => {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const { userInfo } = useSelector((state) => state.auth)
 
-  const addToCartHandler = (product, qty) => {
-    dispatch(addToCart({ ...product, qty }))
-    // Fix for toast configuration
-    toast.success('Item added successfully', {
-      position: 'top-right', // Changed from toast.POSITION.TOP_RIGHT
-      autoClose: 2000,
-    })
+  const [addToCartApi] = useAddToCartMutation()
+
+  const addToCartHandler = async (product, qty) => {
+    if (!userInfo) {
+      // If user is not logged in, redirect to login
+      navigate('/login')
+      return
+    }
+
+    try {
+      await addToCartApi({
+        _id: product._id,
+        name: product.name,
+        image: product.image,
+        price: product.price,
+        qty,
+        product: product._id,
+        countInStock: product.countInStock,
+      })
+
+      toast.success('Item added successfully', {
+        position: 'top-right',
+        autoClose: 2000,
+      })
+    } catch (error) {
+      toast.error('Failed to add item to cart', {
+        position: 'top-right',
+        autoClose: 2000,
+      })
+    }
   }
 
   return (

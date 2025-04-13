@@ -20,6 +20,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useLogoutMutation } from '../../redux/api/usersApiSlice'
 import { logout } from '../../redux/features/auth/authSlice'
 import FavoritesCount from '../Products/FavoritesCount'
+import { clearFavorites } from '../../redux/features/favorites/favoriteSlice'
 
 const Navigation = () => {
   const { userInfo } = useSelector((state) => state.auth)
@@ -30,6 +31,7 @@ const Navigation = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
   const [windowWidth, setWindowWidth] = useState(window.innerWidth)
+  const { favoriteItems } = useSelector((state) => state.favorites)
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -72,6 +74,7 @@ const Navigation = () => {
     try {
       await logoutApiCall().unwrap()
       dispatch(logout())
+      dispatch(clearFavorites()) // Add this line to clear favorites on logout
       navigate('/login')
       setDropdownOpen(false)
       setAdminDropdownOpen(false)

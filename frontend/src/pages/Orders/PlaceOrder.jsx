@@ -6,22 +6,22 @@ import Message from '../../components/Message'
 import ProgressSteps from '../../components/ProgressSteps'
 import Loader from '../../components/Loader'
 import { useCreateOrderMutation } from '../../redux/api/orderApiSlice'
-import { clearCartItems } from '../../redux/features/cart/cartSlice'
+import { useClearCartMutation } from '../../redux/features/cart/cartApiSlice'
 
 const PlaceOrder = () => {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   const cart = useSelector((state) => state.cart)
 
   const [createOrder, { isLoading, error }] = useCreateOrderMutation()
+  const [clearCart] = useClearCartMutation()
 
   useEffect(() => {
     if (!cart.shippingAddress.address) {
       navigate('/shipping')
     }
   }, [cart.paymentMethod, cart.shippingAddress.address, navigate])
-
-  const dispatch = useDispatch()
 
   const placeOrderHandler = async () => {
     try {
@@ -34,7 +34,10 @@ const PlaceOrder = () => {
         taxPrice: cart.taxPrice,
         totalPrice: cart.totalPrice,
       }).unwrap()
-      dispatch(clearCartItems())
+
+      // Clear cart after successful order
+      await clearCart().unwrap()
+
       navigate(`/order/${res._id}`)
     } catch (error) {
       toast.error(error)
@@ -165,7 +168,7 @@ const PlaceOrder = () => {
           <button
             type='button'
             className='bg-gray-700 hover:bg-gray-800 text-white py-3 px-6 rounded-lg text-lg w-full mt-4 transition-colors font-medium'
-            disabled={cart.cartItems === 0}
+            disabled={cart.cartItems.length === 0}
             onClick={placeOrderHandler}
           >
             Place Order

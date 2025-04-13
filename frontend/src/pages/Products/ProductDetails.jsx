@@ -6,6 +6,7 @@ import {
   useGetProductDetailsQuery,
   useCreateReviewMutation,
 } from '../../redux/api/productApiSlice'
+import { useAddToCartMutation } from '../../redux/features/cart/cartApiSlice'
 import Loader from '../../components/Loader'
 import Message from '../../components/Message'
 import {
@@ -20,7 +21,6 @@ import moment from 'moment'
 import HeartIcon from './HeartIcon'
 import Ratings from './Ratings'
 import ProductTabs from './ProductTabs'
-import { addToCart } from '../../redux/features/cart/cartSlice'
 
 const ProductDetails = () => {
   const { id: productId } = useParams()
@@ -39,6 +39,9 @@ const ProductDetails = () => {
   } = useGetProductDetailsQuery(productId)
 
   const { userInfo } = useSelector((state) => state.auth)
+
+  // Use the addToCart mutation from the API
+  const [addToCartApi, { isLoading: isAddingToCart }] = useAddToCartMutation()
 
   const [createReview, { isLoading: loadingProductReview }] =
     useCreateReviewMutation()
@@ -68,10 +71,35 @@ const ProductDetails = () => {
     }
   }
 
-  const addToCartHandler = () => {
-    dispatch(addToCart({ ...product, qty }))
-    navigate('/cart')
+  const addToCartHandler = async () => {
+    if (!userInfo) {
+      navigate('/login?redirect=/cart')
+      return
+    }
+
+    try {
+      await addToCartApi({
+        _id: product._id,
+        name: product.name,
+        image: product.image,
+        price: product.price,
+        qty,
+        product: product._id,
+        countInStock: product.quantity,
+      }).unwrap()
+
+      toast.success(`Added ${product.name} to your cart`)
+      navigate('/cart')
+    } catch (error) {
+      const errorMessage =
+        error?.data?.message ||
+        error?.data ||
+        error.message ||
+        'Error adding to cart'
+      toast.error(errorMessage)
+    }
   }
+
   return (
     <div className='container mx-auto px-4 py-8 max-w-7xl'>
       <div className='mb-6'>
@@ -190,14 +218,42 @@ const ProductDetails = () => {
                   )}
                   <button
                     onClick={addToCartHandler}
-                    disabled={product.quantity === 0}
+                    disabled={product.quantity === 0 || isAddingToCart}
                     className={`flex-1 py-3 px-6 rounded-lg font-medium text-white ${
-                      product.quantity === 0
+                      product.quantity === 0 || isAddingToCart
                         ? 'bg-gray-400 cursor-not-allowed'
                         : 'bg-gray-800 hover:bg-gray-700 transition-colors'
                     }`}
                   >
-                    {product.quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+                    {isAddingToCart ? (
+                      <span className='flex items-center justify-center'>
+                        <svg
+                          className='animate-spin -ml-1 mr-2 h-4 w-4 text-white'
+                          xmlns='http://www.w3.org/2000/svg'
+                          fill='none'
+                          viewBox='0 0 24 24'
+                        >
+                          <circle
+                            className='opacity-25'
+                            cx='12'
+                            cy='12'
+                            r='10'
+                            stroke='currentColor'
+                            strokeWidth='4'
+                          ></circle>
+                          <path
+                            className='opacity-75'
+                            fill='currentColor'
+                            d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                          ></path>
+                        </svg>
+                        Adding...
+                      </span>
+                    ) : product.quantity === 0 ? (
+                      'Out of Stock'
+                    ) : (
+                      'Add to Cart'
+                    )}
                   </button>
                 </div>
               </div>
