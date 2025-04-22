@@ -58,41 +58,53 @@ const ProductCard = ({ p }) => {
   }
 
   return (
-    <div className='w-full max-w-sm bg-white border border-gray-200 rounded-lg shadow transition-transform hover:scale-105 hover:shadow-lg'>
-      <section className='relative'>
+    <div
+      className='w-full max-w-sm bg-[rgb(7,10,19)] border border-gray-800 rounded-lg shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[rgba(211,190,249,0.15)] hover:border-[rgb(211,190,249,0.5)]'
+      style={{ height: '480px', display: 'flex', flexDirection: 'column' }}
+    >
+      <section className='relative' style={{ height: '240px', flex: 'none' }}>
         <Link to={`/product/${p._id}`}>
           {/* Stock indicator badge */}
           {p.quantity <= 0 && (
-            <span className='absolute top-3 left-3 bg-red-500 text-white text-xs font-medium px-2.5 py-0.5 rounded-full z-10'>
+            <span className='absolute top-3 left-3 bg-red-600 text-white text-xs font-medium px-2.5 py-0.5 rounded-full z-10'>
               Out of Stock
             </span>
           )}
           {p.quantity > 0 && p.quantity <= 5 && (
-            <span className='absolute top-3 left-3 bg-yellow-500 text-white text-xs font-medium px-2.5 py-0.5 rounded-full z-10'>
+            <span className='absolute top-3 left-3 bg-amber-500 text-white text-xs font-medium px-2.5 py-0.5 rounded-full z-10'>
               Low Stock: {p.quantity} left
             </span>
           )}
 
-          <span className='absolute bottom-3 right-3 bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full'>
+          <span className='absolute bottom-3 right-3 bg-[rgba(211,190,249,0.3)] text-[rgb(211,190,249)] text-xs font-medium px-2.5 py-0.5 rounded-full'>
             {p?.brand}
           </span>
-          <img
-            className='rounded-t-lg w-full h-48 object-cover'
-            src={p.image}
-            alt={p.name}
-          />
+          <div
+            className='overflow-hidden'
+            style={{ height: '240px', width: '100%' }}
+          >
+            <img
+              className='rounded-t-lg w-full h-full object-cover'
+              src={p.image}
+              alt={p.name}
+            />
+            <div className='absolute inset-0 bg-gradient-to-t from-[rgba(7,10,19,0.7)] to-transparent opacity-70'></div>
+          </div>
         </Link>
         <div className='absolute top-3 right-3'>
           <HeartIcon product={p} />
         </div>
       </section>
 
-      <div className='p-4'>
-        <div className='flex justify-between items-start mb-2'>
-          <h5 className='text-lg font-medium text-gray-800 line-clamp-2'>
+      <div
+        className='p-5'
+        style={{ flex: '1', display: 'flex', flexDirection: 'column' }}
+      >
+        <div className='flex justify-between items-start mb-3'>
+          <h5 className='text-lg font-medium text-gray-100 line-clamp-2 group-hover:text-[rgb(211,190,249)]'>
             {p?.name}
           </h5>
-          <p className='font-bold text-gray-700 ml-2'>
+          <p className='font-bold text-[rgb(211,190,249)] ml-2 whitespace-nowrap'>
             {p?.price?.toLocaleString('en-US', {
               style: 'currency',
               currency: 'USD',
@@ -100,14 +112,14 @@ const ProductCard = ({ p }) => {
           </p>
         </div>
 
-        <p className='mb-3 text-sm text-gray-600 line-clamp-2'>
+        <p className='mb-4 text-sm text-gray-400 line-clamp-2'>
           {p?.description}
         </p>
 
-        <div className='flex justify-between items-center mt-4'>
+        <div className='flex justify-between items-center mt-auto'>
           <Link
             to={`/product/${p._id}`}
-            className='px-3 py-2 text-sm font-medium text-white bg-gray-700 rounded-lg hover:bg-gray-800 focus:ring-4 focus:outline-none focus:ring-gray-300 transition-colors'
+            className='px-4 py-2 text-sm font-medium text-[rgb(7,10,19)] bg-[rgb(211,190,249)] rounded-lg hover:bg-[rgba(211,190,249,0.85)] focus:ring-4 focus:outline-none focus:ring-[rgba(211,190,249,0.5)] transition-colors duration-300'
           >
             View Details
             <svg
@@ -129,12 +141,12 @@ const ProductCard = ({ p }) => {
 
           {/* Conditional rendering of Add to Cart button based on stock */}
           <button
-            className={`p-2 rounded-full ${
+            className={`p-3 rounded-full transition-all duration-300 ${
               p.quantity <= 0
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
                 : isAddingToCart
-                ? 'bg-gray-300 text-gray-500 cursor-wait'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors'
+                ? 'bg-gray-700 text-gray-500 cursor-wait'
+                : 'bg-[rgba(211,190,249,0.2)] hover:bg-[rgba(211,190,249,0.3)] text-[rgb(211,190,249)]'
             }`}
             onClick={() => addToCartHandler(p, 1)}
             disabled={p.quantity <= 0 || isAddingToCart}
@@ -143,7 +155,7 @@ const ProductCard = ({ p }) => {
           >
             {isAddingToCart ? (
               <svg
-                className='animate-spin h-5 w-5 text-gray-500'
+                className='animate-spin h-5 w-5 text-[rgba(211,190,249,0.7)]'
                 xmlns='http://www.w3.org/2000/svg'
                 fill='none'
                 viewBox='0 0 24 24'

@@ -13,6 +13,7 @@ export const userApiSlice = apiSlice.injectEndpoints({
     register: builder.mutation({
       query: (data) => ({
         url: `${USERS_URL}/send-otp`,
+        method: 'POST',
         body: data,
       }),
     }),

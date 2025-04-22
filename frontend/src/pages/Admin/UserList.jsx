@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { FaTrash, FaCheck, FaTimes, FaEdit } from 'react-icons/fa'
 import Message from '../../components/Message'
 import Loader from '../../components/Loader'
 import {
@@ -79,129 +78,160 @@ const UserList = () => {
   }
 
   return (
-    <div className='p-6 bg-gray-50 min-h-screen'>
-      {isLoading ? (
-        <Loader />
-      ) : error ? (
-        <Message variant='danger'>
-          {error?.data?.message || error.error}
-        </Message>
-      ) : (
-        <div className='flex flex-col md:flex-row md:justify-center'>
-          <div className='w-full md:w-3/4 mx-auto bg-white rounded-lg shadow-lg overflow-hidden'>
-            <h2 className='text-3xl font-bold text-gray-800 p-4 border-b'>
-              Users
-            </h2>
-            <table className='w-full table-auto'>
-              <thead className='bg-gray-100 text-gray-600'>
-                <tr>
-                  <th className='px-6 py-3 text-left'>ID</th>
-                  <th className='px-6 py-3 text-left'>NAME</th>
-                  <th className='px-6 py-3 text-left'>EMAIL</th>
-                  <th className='px-6 py-3 text-left'>ADMIN</th>
-                  <th className='px-6 py-3 text-left'>ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody className='text-gray-700'>
-                {users.map((user) => {
-                  const userState = editableFields[user._id] || {}
+    <div className='min-h-screen bg-[rgb(7,10,19)] text-gray-100 py-8 px-4'>
+      <div className='max-w-6xl mx-auto'>
+        <h1 className='text-3xl font-bold mb-6 text-[rgb(211,190,249)]'>
+          User Management
+        </h1>
 
-                  return (
-                    <tr
-                      key={user._id}
-                      className='border-b hover:bg-gray-50 transition duration-200 ease-in-out'
-                    >
-                      <td className='px-6 py-4'>{user._id}</td>
-
-                      {/* Username */}
-                      <td className='px-6 py-4'>
-                        {editingUserId === user._id ? (
-                          <input
-                            type='text'
-                            value={userState.username ?? user.username}
-                            onChange={(e) =>
-                              handleInputChange(
-                                user._id,
-                                'username',
-                                e.target.value
-                              )
-                            }
-                            className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400'
-                          />
-                        ) : (
-                          user.username
-                        )}
-                      </td>
-
-                      {/* Email */}
-                      <td className='px-6 py-4'>
-                        {editingUserId === user._id ? (
-                          <input
-                            type='email'
-                            value={userState.email ?? user.email}
-                            onChange={(e) =>
-                              handleInputChange(
-                                user._id,
-                                'email',
-                                e.target.value
-                              )
-                            }
-                            className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400'
-                          />
-                        ) : (
-                          user.email
-                        )}
-                      </td>
-
-                      {/* isAdmin (Not Editable) */}
-                      <td className='px-6 py-4 text-center'>
-                        {user.isAdmin ? 'Yes' : 'No'}
-                      </td>
-
-                      {/* Actions */}
-                      <td className='px-6 py-4 text-center'>
-                        {editingUserId === user._id ? (
-                          <>
-                            <button
-                              onClick={() => handleUpdate(user)}
-                              className='bg-green-600 hover:bg-green-700 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-green-400 transition duration-150 mr-2'
-                            >
-                              <FaCheck />
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className='bg-gray-600 hover:bg-gray-700 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-400 transition duration-150'
-                            >
-                              <FaTimes />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setEditingUserId(user._id)}
-                              className='bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-150 mr-2'
-                            >
-                              <FaEdit />
-                            </button>
-                            {!user.isAdmin && (
-                              <button
-                                onClick={() => deleteHandler(user._id)}
-                                className='bg-red-600 hover:bg-red-700 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-red-400 transition duration-150'
-                              >
-                                <FaTrash />
-                              </button>
-                            )}
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+        {isLoading ? (
+          <div className='flex justify-center my-12'>
+            <Loader />
           </div>
-        </div>
-      )}
+        ) : error ? (
+          <Message variant='danger'>
+            {error?.data?.message || error.error}
+          </Message>
+        ) : (
+          <div className='bg-gray-900 bg-opacity-50 rounded-lg shadow-lg overflow-hidden border border-gray-800'>
+            <div className='overflow-x-auto'>
+              <table className='w-full min-w-full divide-y divide-gray-800'>
+                <thead className='bg-gray-800 text-gray-300'>
+                  <tr>
+                    <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider'>
+                      ID
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider'>
+                      Name
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider'>
+                      Email
+                    </th>
+                    <th className='px-6 py-3 text-left text-xs font-medium uppercase tracking-wider'>
+                      Admin
+                    </th>
+                    <th className='px-6 py-3 text-right text-xs font-medium uppercase tracking-wider'>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className='divide-y divide-gray-800 bg-gray-900 bg-opacity-40'>
+                  {users.map((user) => {
+                    const userState = editableFields[user._id] || {}
+
+                    return (
+                      <tr
+                        key={user._id}
+                        className={`transition-colors duration-200 hover:bg-gray-800 hover:bg-opacity-70`}
+                      >
+                        <td className='px-6 py-4 text-sm font-mono text-gray-400'>
+                          {user._id.substring(0, 10)}...
+                        </td>
+
+                        {/* Username */}
+                        <td className='px-6 py-4 text-sm'>
+                          {editingUserId === user._id ? (
+                            <input
+                              type='text'
+                              value={userState.username ?? user.username}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  user._id,
+                                  'username',
+                                  e.target.value
+                                )
+                              }
+                              className='w-full p-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[rgb(211,190,249)] text-white'
+                            />
+                          ) : (
+                            user.username
+                          )}
+                        </td>
+
+                        {/* Email */}
+                        <td className='px-6 py-4 text-sm'>
+                          {editingUserId === user._id ? (
+                            <input
+                              type='email'
+                              value={userState.email ?? user.email}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  user._id,
+                                  'email',
+                                  e.target.value
+                                )
+                              }
+                              className='w-full p-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-[rgb(211,190,249)] text-white'
+                            />
+                          ) : (
+                            user.email
+                          )}
+                        </td>
+
+                        {/* isAdmin (Not Editable) */}
+                        <td className='px-6 py-4 text-sm'>
+                          {user.isAdmin ? (
+                            <span className='px-2 py-1 text-xs font-medium rounded-full bg-[rgba(211,190,249,0.2)] text-[rgb(211,190,249)]'>
+                              Admin
+                            </span>
+                          ) : (
+                            <span className='px-2 py-1 text-xs font-medium rounded-full bg-gray-800 text-gray-400'>
+                              User
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className='px-6 py-4 text-right'>
+                          {editingUserId === user._id ? (
+                            <div className='flex justify-end space-x-2'>
+                              <button
+                                onClick={() => handleUpdate(user)}
+                                className='bg-green-600 hover:bg-green-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-green-400 transition duration-150'
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                className='bg-gray-600 hover:bg-gray-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 transition duration-150'
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div className='flex justify-end space-x-2'>
+                              <button
+                                onClick={() => setEditingUserId(user._id)}
+                                className='bg-[rgb(211,190,249)] text-gray-900 hover:bg-[rgb(191,170,229)] p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-[rgb(211,190,249)] transition duration-150 font-medium text-sm'
+                              >
+                                Edit
+                              </button>
+                              {!user.isAdmin && (
+                                <button
+                                  onClick={() => deleteHandler(user._id)}
+                                  className='bg-red-600 hover:bg-red-700 text-white p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-red-400 transition duration-150 font-medium text-sm'
+                                >
+                                  Delete
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+
+              {users && users.length === 0 && (
+                <div className='text-center py-8 text-gray-400'>
+                  No users found.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

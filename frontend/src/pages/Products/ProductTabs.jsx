@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Ratings from './Ratings'
 import { useGetTopProductsQuery } from '../../redux/api/productApiSlice'
-import SmallProduct from './SmallProduct'
 import Loader from '../../components/Loader'
 import Message from '../../components/Message'
 
@@ -37,35 +36,35 @@ const ProductTabs = ({
     )
 
   return (
-    <div className='w-full'>
+    <div className='w-full bg-[rgb(7,10,19)] text-gray-200 rounded-lg shadow-xl p-6'>
       {/* Tab Navigation */}
-      <div className='border-b border-gray-200'>
+      <div className='border-b border-gray-700'>
         <nav className='flex flex-wrap -mb-px'>
           <button
-            className={`mr-6 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+            className={`mr-6 py-4 px-3 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 1
-                ? 'border-gray-800 text-gray-800'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-[rgb(211,190,249)] text-[rgb(211,190,249)]'
+                : 'border-transparent text-gray-400 hover:text-[rgb(211,190,249)] hover:border-gray-600'
             }`}
             onClick={() => handleTabClick(1)}
           >
             Write Your Review
           </button>
           <button
-            className={`mr-6 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+            className={`mr-6 py-4 px-3 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 2
-                ? 'border-gray-800 text-gray-800'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-[rgb(211,190,249)] text-[rgb(211,190,249)]'
+                : 'border-transparent text-gray-400 hover:text-[rgb(211,190,249)] hover:border-gray-600'
             }`}
             onClick={() => handleTabClick(2)}
           >
             All Reviews ({product.reviews.length})
           </button>
           <button
-            className={`mr-6 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+            className={`mr-6 py-4 px-3 border-b-2 font-medium text-sm transition-colors ${
               activeTab === 3
-                ? 'border-gray-800 text-gray-800'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-[rgb(211,190,249)] text-[rgb(211,190,249)]'
+                : 'border-transparent text-gray-400 hover:text-[rgb(211,190,249)] hover:border-gray-600'
             }`}
             onClick={() => handleTabClick(3)}
           >
@@ -75,17 +74,17 @@ const ProductTabs = ({
       </div>
 
       {/* Tab Content */}
-      <div className='py-6'>
+      <div className='py-8'>
         {/* Write Review Tab */}
         {activeTab === 1 && (
           <div className='max-w-2xl'>
             {!userInfo ? (
-              <div className='bg-gray-50 p-6 rounded-lg border border-gray-200'>
-                <p className='text-gray-700'>
+              <div className='bg-[rgba(211,190,249,0.1)] p-6 rounded-lg border border-[rgba(211,190,249,0.3)]'>
+                <p className='text-gray-300'>
                   Please{' '}
                   <Link
                     to='/login'
-                    className='text-gray-800 font-medium hover:underline'
+                    className='text-[rgb(211,190,249)] font-medium hover:underline'
                   >
                     sign in
                   </Link>{' '}
@@ -93,8 +92,8 @@ const ProductTabs = ({
                 </p>
               </div>
             ) : hasUserReviewed ? (
-              <div className='bg-yellow-50 p-6 rounded-lg border border-yellow-200'>
-                <p className='text-yellow-700'>
+              <div className='bg-[rgba(211,190,249,0.1)] p-6 rounded-lg border border-[rgba(211,190,249,0.3)]'>
+                <p className='text-gray-300'>
                   You have already submitted a review for this product. Thank
                   you for your feedback!
                 </p>
@@ -104,7 +103,7 @@ const ProductTabs = ({
                 <div>
                   <label
                     htmlFor='rating'
-                    className='block text-gray-700 font-medium mb-2'
+                    className='block text-gray-300 font-medium mb-2'
                   >
                     Rating
                   </label>
@@ -113,7 +112,7 @@ const ProductTabs = ({
                     required
                     value={rating}
                     onChange={(e) => setRating(e.target.value)}
-                    className='w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-800'
+                    className='w-full p-3 border border-gray-700 rounded-lg bg-[rgba(7,10,19,0.8)] focus:outline-none focus:ring-2 focus:ring-[rgb(211,190,249)] text-gray-200'
                   >
                     <option value=''>Select a rating</option>
                     <option value='1'>1 - Inferior</option>
@@ -127,7 +126,7 @@ const ProductTabs = ({
                 <div>
                   <label
                     htmlFor='comment'
-                    className='block text-gray-700 font-medium mb-2'
+                    className='block text-gray-300 font-medium mb-2'
                   >
                     Comment
                   </label>
@@ -137,7 +136,7 @@ const ProductTabs = ({
                     required
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className='w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-800'
+                    className='w-full p-3 border border-gray-700 rounded-lg bg-[rgba(7,10,19,0.8)] focus:outline-none focus:ring-2 focus:ring-[rgb(211,190,249)] text-gray-200'
                     placeholder='Share your thoughts about this product...'
                   ></textarea>
                 </div>
@@ -145,10 +144,10 @@ const ProductTabs = ({
                 <button
                   type='submit'
                   disabled={loadingProductReview}
-                  className={`px-5 py-3 rounded-lg font-medium text-white ${
+                  className={`px-5 py-3 rounded-lg font-medium text-[rgb(7,10,19)] ${
                     loadingProductReview
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-gray-800 hover:bg-gray-700 transition-colors'
+                      ? 'bg-gray-500 cursor-not-allowed'
+                      : 'bg-[rgb(211,190,249)] hover:bg-[rgba(211,190,249,0.8)] transition-colors'
                   }`}
                 >
                   {loadingProductReview ? 'Submitting...' : 'Submit Review'}
@@ -162,8 +161,8 @@ const ProductTabs = ({
         {activeTab === 2 && (
           <div className='space-y-6 max-w-4xl'>
             {product.reviews.length === 0 ? (
-              <div className='bg-gray-50 p-6 rounded-lg border border-gray-200'>
-                <p className='text-gray-700'>
+              <div className='bg-[rgba(211,190,249,0.1)] p-6 rounded-lg border border-[rgba(211,190,249,0.3)]'>
+                <p className='text-gray-300'>
                   No reviews yet. Be the first to review this product!
                 </p>
               </div>
@@ -171,16 +170,18 @@ const ProductTabs = ({
               product.reviews.map((review) => (
                 <div
                   key={review._id}
-                  className='bg-white p-6 rounded-lg border border-gray-200 shadow-sm'
+                  className='bg-[rgba(7,10,19,0.7)] p-6 rounded-lg border border-gray-700 shadow-md hover:shadow-[rgb(211,190,249,0.1)] transition-shadow'
                 >
                   <div className='flex flex-wrap justify-between items-center mb-3'>
-                    <h4 className='font-medium text-gray-800'>{review.name}</h4>
-                    <span className='text-sm text-gray-500'>
+                    <h4 className='font-medium text-[rgb(211,190,249)]'>
+                      {review.name}
+                    </h4>
+                    <span className='text-sm text-gray-400'>
                       {review.createdAt.substring(0, 10)}
                     </span>
                   </div>
                   <Ratings value={review.rating} />
-                  <p className='mt-4 text-gray-600'>{review.comment}</p>
+                  <p className='mt-4 text-gray-300'>{review.comment}</p>
                 </div>
               ))
             )}
@@ -190,13 +191,30 @@ const ProductTabs = ({
         {/* Related Products Tab */}
         {activeTab === 3 && (
           <div className='w-full overflow-x-auto'>
-            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 w-full'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full'>
               {!data ? (
                 <Loader />
               ) : (
                 data.map((product) => (
-                  <div key={product._id} className='w-full'>
-                    <SmallProduct product={product} />
+                  <div
+                    key={product._id}
+                    className='w-full bg-[rgba(7,10,19,0.7)] border border-gray-700 rounded-lg overflow-hidden shadow-md hover:shadow-[rgb(211,190,249,0.2)] transition-all hover:border-[rgb(211,190,249,0.5)]'
+                  >
+                    {/* Product card content would go here */}
+                    <div className='p-4'>
+                      <h3 className='text-[rgb(211,190,249)] font-medium truncate'>
+                        {product.name}
+                      </h3>
+                      <div className='flex items-center mt-2'>
+                        <Ratings value={product.rating} />
+                        <span className='ml-2 text-sm text-gray-400'>
+                          ({product.numReviews})
+                        </span>
+                      </div>
+                      <p className='text-gray-300 font-bold mt-2'>
+                        ${product.price}
+                      </p>
+                    </div>
                   </div>
                 ))
               )}

@@ -8,7 +8,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // in userController.js
-let tempOtpStore = {} // temp memory store
+let tempOtpStore = {} // temp memory store, consider Redis or DB for production
 
 const sendOtp = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body

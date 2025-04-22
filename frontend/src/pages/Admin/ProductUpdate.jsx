@@ -9,7 +9,7 @@ import {
 import { useFetchCategoriesQuery } from '../../redux/api/categoryApiSlice'
 import { toast } from 'react-toastify'
 
-// Custom QuantityInput component to handle quantity changes correctly
+// Custom QuantityInput component with enhanced styling
 const QuantityInput = ({ value, onChange }) => {
   const handleChange = (e) => {
     const newValue = e.target.value
@@ -37,7 +37,7 @@ const QuantityInput = ({ value, onChange }) => {
       <input
         type='text'
         pattern='\d*'
-        className='p-4 w-[24rem] border rounded-lg bg-[#101011] text-white'
+        className='p-4 w-[24rem] border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none transition-all'
         value={value}
         onChange={handleChange}
       />
@@ -45,14 +45,14 @@ const QuantityInput = ({ value, onChange }) => {
         <button
           type='button'
           onClick={handleIncrement}
-          className='bg-gray-700 text-white px-3 py-1 rounded-t-md hover:bg-gray-600'
+          className='bg-[rgb(211,190,249)] text-[rgb(7,10,19)] px-3 py-1 rounded-t-md hover:bg-[rgb(191,170,229)] transition-colors font-bold'
         >
           +
         </button>
         <button
           type='button'
           onClick={handleDecrement}
-          className='bg-gray-700 text-white px-3 py-1 rounded-b-md hover:bg-gray-600'
+          className='bg-[rgb(211,190,249)] text-[rgb(7,10,19)] px-3 py-1 rounded-b-md hover:bg-[rgb(191,170,229)] transition-colors font-bold'
           disabled={value === '' || parseInt(value, 10) <= 0}
         >
           -
@@ -209,30 +209,65 @@ const AdminProductUpdate = () => {
 
   // Show loading state
   if (isLoading)
-    return <div className='text-center p-5'>Loading product data...</div>
+    return (
+      <div className='flex items-center justify-center h-screen bg-[rgb(7,10,19)]'>
+        <div className='text-[rgb(211,190,249)] text-2xl font-semibold animate-pulse'>
+          Loading product data...
+        </div>
+      </div>
+    )
 
   return (
-    <>
-      <div className='container xl:mx-[9rem] sm:mx-[0]'>
-        <div className='flex flex-col md:flex-row'>
-          <div className='md:w-3/4 p-3'>
-            <div className='h-12 text-2xl font-semibold'>
+    <div className='min-h-screen bg-[rgb(7,10,19)] text-white py-8'>
+      <div className='container mx-auto max-w-6xl px-4'>
+        <div className='bg-[rgba(20,23,34,0.7)] rounded-2xl shadow-lg border border-[rgba(211,190,249,0.2)] backdrop-blur-sm'>
+          <div className='p-6 border-b border-[rgba(211,190,249,0.3)]'>
+            <h1 className='text-3xl font-bold text-[rgb(211,190,249)]'>
               Update / Delete Product
-            </div>
+            </h1>
+          </div>
 
+          <div className='p-6'>
+            {/* Image Preview Section */}
             {image && (
-              <div className='text-center'>
-                <img
-                  src={image}
-                  alt='product'
-                  className='block mx-auto max-h-[200px] object-contain'
-                />
+              <div className='mb-8'>
+                <div className='bg-[rgba(211,190,249,0.05)] p-4 rounded-xl border border-[rgba(211,190,249,0.3)] flex justify-center'>
+                  <img
+                    src={image}
+                    alt='product'
+                    className='max-h-[250px] object-contain rounded-lg'
+                  />
+                </div>
               </div>
             )}
 
-            <div className='mb-3'>
-              <label className='border text-white px-4 block w-full text-center rounded-lg cursor-pointer font-bold py-11 bg-[#101011]'>
-                {imageModified ? 'Image Updated' : 'Update Image'}
+            {/* Image Upload Section */}
+            <div className='mb-8'>
+              <label className='border-2 border-dashed border-[rgb(211,190,249)] text-[rgb(211,190,249)] px-4 block w-full text-center rounded-xl cursor-pointer font-bold py-12 bg-[rgba(211,190,249,0.05)] hover:bg-[rgba(211,190,249,0.1)] transition-all'>
+                <div className='flex flex-col items-center'>
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    className='h-12 w-12 mb-2'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'
+                    />
+                  </svg>
+                  <span className='text-xl'>
+                    {imageModified
+                      ? 'Image Updated ✓'
+                      : 'Click to Update Product Image'}
+                  </span>
+                  <span className='text-sm mt-2 text-gray-400'>
+                    JPG, PNG or GIF up to 5MB
+                  </span>
+                </div>
                 <input
                   type='file'
                   name='image'
@@ -243,114 +278,165 @@ const AdminProductUpdate = () => {
               </label>
             </div>
 
-            <div className='p-3'>
-              <div className='flex flex-wrap'>
-                <div className='one'>
-                  <label htmlFor='name'>Name</label> <br />
-                  <input
-                    type='text'
-                    className='p-4 mb-3 w-[30rem] border rounded-lg bg-[#101011] text-white mr-[5rem]'
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-
-                <div className='two'>
-                  <label htmlFor='price'>Price</label> <br />
-                  <input
-                    type='number'
-                    className='p-4 mb-3 w-[30rem] border rounded-lg bg-[#101011] text-white'
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                  />
-                </div>
+            {/* Form Sections */}
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              {/* Name & Price Section */}
+              <div>
+                <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
+                  Product Name
+                </label>
+                <input
+                  type='text'
+                  className='p-4 w-full border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none transition-all'
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder='Enter product name'
+                />
               </div>
 
-              <div className='flex flex-wrap'>
-                <div>
-                  <label htmlFor='quantity'>Quantity</label> <br />
-                  <QuantityInput value={quantity} onChange={setQuantity} />
-                  <p className='text-sm text-gray-500'>
-                    Current quantity: {quantity || '0'}
-                  </p>
-                </div>
-                <div>
-                  <label htmlFor='brand'>Brand</label> <br />
-                  <input
-                    type='text'
-                    className='p-4 mb-3 w-[30rem] border rounded-lg bg-[#101011] text-white'
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
-                  />
-                </div>
+              <div>
+                <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
+                  Price
+                </label>
+                <input
+                  type='number'
+                  className='p-4 w-full border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none transition-all'
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  placeholder='0.00'
+                />
               </div>
 
-              <div className='flex flex-wrap'>
-                <div>
-                  <label htmlFor='stock'>Stock Status</label> <br />
-                  <select
-                    className='p-4 mb-3 w-[30rem] border rounded-lg bg-[#101011] text-white mr-[5rem]'
-                    value={stock.toString()}
-                    onChange={(e) => setStock(e.target.value === 'true')}
-                  >
-                    <option value='true'>In Stock</option>
-                    <option value='false'>Out of Stock</option>
-                  </select>
-                  <p className='text-sm text-gray-500'>
-                    Auto-updates based on quantity
-                  </p>
-                </div>
+              {/* Quantity & Brand Section */}
+              <div>
+                <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
+                  Quantity
+                </label>
+                <QuantityInput value={quantity} onChange={setQuantity} />
+                <p className='text-sm text-gray-400 mt-2'>
+                  Current quantity: {quantity || '0'}
+                </p>
               </div>
 
-              <label htmlFor='description' className='my-5'>
+              <div>
+                <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
+                  Brand
+                </label>
+                <input
+                  type='text'
+                  className='p-4 w-full border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none transition-all'
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                  placeholder='Enter brand name'
+                />
+              </div>
+
+              {/* Stock Status & Category Section */}
+              <div>
+                <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
+                  Stock Status
+                </label>
+                <select
+                  className='p-4 w-full border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none transition-all appearance-none'
+                  value={stock.toString()}
+                  onChange={(e) => setStock(e.target.value === 'true')}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23D3BEF9'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 1rem center',
+                    backgroundSize: '1.5em',
+                  }}
+                >
+                  <option value='true'>In Stock</option>
+                  <option value='false'>Out of Stock</option>
+                </select>
+                <p className='text-sm text-gray-400 mt-2'>
+                  Auto-updates based on quantity
+                </p>
+              </div>
+
+              <div>
+                <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
+                  Category
+                </label>
+                <select
+                  className='p-4 w-full border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none transition-all appearance-none'
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23D3BEF9'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 1rem center',
+                    backgroundSize: '1.5em',
+                  }}
+                >
+                  <option value=''>Select a category</option>
+                  {categories?.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Description Section - Full Width */}
+            <div className='mt-6'>
+              <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
                 Description
               </label>
               <textarea
-                id='description'
-                className='p-2 mb-3 bg-[#101011] border rounded-lg w-[95%] text-white'
+                className='p-4 w-full border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none transition-all min-h-[150px]'
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={5}
+                placeholder='Detailed product description'
               />
+            </div>
 
-              <div className='flex justify-between'>
-                <div>
-                  <label htmlFor='category'>Category</label> <br />
-                  <select
-                    id='category'
-                    value={category}
-                    className='p-4 mb-3 w-[30rem] border rounded-lg bg-[#101011] text-white mr-[5rem]'
-                    onChange={(e) => setCategory(e.target.value)}
-                  >
-                    <option value=''>Select a category</option>
-                    {categories?.map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className='mt-5'>
-                <button
-                  onClick={handleSubmit}
-                  className='py-4 px-10 rounded-lg text-lg font-bold bg-green-600 mr-6 hover:bg-green-700 transition'
+            {/* Action Buttons */}
+            <div className='mt-10 flex flex-wrap gap-4'>
+              <button
+                onClick={handleSubmit}
+                className='py-4 px-10 rounded-lg text-lg font-bold bg-[rgb(211,190,249)] text-[rgb(7,10,19)] hover:bg-[rgb(191,170,229)] transition-colors flex items-center'
+              >
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  className='h-5 w-5 mr-2'
+                  viewBox='0 0 20 20'
+                  fill='currentColor'
                 >
-                  Update
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className='py-4 px-10 rounded-lg text-lg font-bold bg-pink-600 hover:bg-pink-700 transition'
+                  <path
+                    fillRule='evenodd'
+                    d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+                    clipRule='evenodd'
+                  />
+                </svg>
+                Update Product
+              </button>
+              <button
+                onClick={handleDelete}
+                className='py-4 px-10 rounded-lg text-lg font-bold border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors flex items-center'
+              >
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  className='h-5 w-5 mr-2'
+                  viewBox='0 0 20 20'
+                  fill='currentColor'
                 >
-                  Delete
-                </button>
-              </div>
+                  <path
+                    fillRule='evenodd'
+                    d='M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z'
+                    clipRule='evenodd'
+                  />
+                </svg>
+                Delete Product
+              </button>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

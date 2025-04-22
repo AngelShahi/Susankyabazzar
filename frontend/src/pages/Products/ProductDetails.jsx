@@ -101,180 +101,226 @@ const ProductDetails = () => {
   }
 
   return (
-    <div className='container mx-auto px-4 py-8 max-w-7xl'>
-      <div className='mb-6'>
-        <Link
-          to='/'
-          className='text-gray-600 font-medium hover:text-gray-900 flex items-center transition-colors'
-        >
-          <FaArrowLeft className='mr-2' /> Go Back
-        </Link>
-      </div>
+    <div className='min-h-screen bg-[rgb(7,10,19)] text-gray-200'>
+      <div className='container mx-auto px-4 py-12 max-w-7xl'>
+        <div className='mb-8'>
+          <Link
+            to='/'
+            className='text-[rgb(211,190,249)] font-medium hover:text-white flex items-center transition-colors group'
+          >
+            <FaArrowLeft className='mr-2 group-hover:-translate-x-1 transition-transform duration-300' />{' '}
+            Back to Shop
+          </Link>
+        </div>
 
-      {isLoading ? (
-        <Loader />
-      ) : error ? (
-        <Message variant='danger'>
-          {error?.data?.message || error.message}
-        </Message>
-      ) : (
-        <>
-          <div className='flex flex-col lg:flex-row gap-8 mb-12'>
-            {/* Product Image Section */}
-            <div className='lg:w-1/2 relative'>
-              <div className='bg-white rounded-lg shadow-sm overflow-hidden'>
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className='w-full h-auto object-cover'
-                />
-              </div>
-              <div className='absolute top-4 right-4'>
-                <HeartIcon product={product} />
-              </div>
+        {isLoading ? (
+          <div className='flex justify-center items-center py-20'>
+            <div className='animate-spin rounded-full h-16 w-16 border-b-2 border-t-2 border-[rgb(211,190,249)]'></div>
+            <span className='ml-4 text-[rgb(211,190,249)] font-medium'>
+              Loading product details...
+            </span>
+          </div>
+        ) : error ? (
+          <div className='bg-[rgba(211,190,249,0.1)] border-l-4 border-red-400 text-gray-200 p-6 my-6 rounded-r shadow-lg'>
+            <div className='flex items-center'>
+              <svg
+                className='w-6 h-6 text-red-400 mr-4'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+                xmlns='http://www.w3.org/2000/svg'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth='2'
+                  d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                ></path>
+              </svg>
+              <p>{error?.data?.message || error.message}</p>
             </div>
-
-            {/* Product Details Section */}
-            <div className='lg:w-1/2 flex flex-col justify-between'>
-              <div className='bg-white rounded-lg shadow-sm p-6 mb-6'>
-                <h2 className='text-3xl font-semibold text-gray-800 mb-4'>
-                  {product.name}
-                </h2>
-                <div className='mb-4'>
-                  <Ratings
-                    value={product.rating}
-                    text={`${product.numReviews} reviews`}
+          </div>
+        ) : (
+          <>
+            <div className='flex flex-col lg:flex-row gap-10 mb-16'>
+              {/* Product Image Section */}
+              <div className='lg:w-1/2 relative'>
+                <div className='bg-[rgb(13,17,29)] rounded-xl shadow-lg overflow-hidden border border-gray-800'>
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className='w-full h-auto object-cover'
                   />
+                  <div className='absolute inset-0 bg-gradient-to-t from-[rgba(7,10,19,0.4)] to-transparent pointer-events-none'></div>
                 </div>
-                <p className='text-4xl font-bold text-gray-800 mb-6'>
-                  ${product.price}
-                </p>
-                <p className='text-gray-600 mb-6 leading-relaxed'>
-                  {product.description}
-                </p>
+                <div className='absolute top-4 right-4'>
+                  <HeartIcon product={product} />
+                </div>
+              </div>
 
-                {/* Product Information Grid */}
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6 border-t border-b border-gray-200 py-6'>
-                  <div className='flex items-center'>
-                    <FaStore className='mr-3 text-gray-500' />
-                    <div>
-                      <span className='text-gray-500 text-sm'>Brand</span>
-                      <p className='text-gray-800 font-medium'>
-                        {product.brand}
-                      </p>
-                    </div>
+              {/* Product Details Section */}
+              <div className='lg:w-1/2 flex flex-col justify-between'>
+                <div className='bg-[rgb(13,17,29)] rounded-xl shadow-lg p-8 mb-6 border border-gray-800'>
+                  <h2 className='text-3xl font-semibold text-white mb-4'>
+                    {product.name}
+                  </h2>
+                  <div className='mb-6'>
+                    <Ratings
+                      value={product.rating}
+                      text={`${product.numReviews} reviews`}
+                    />
                   </div>
-                  <div className='flex items-center'>
-                    <FaClock className='mr-3 text-gray-500' />
-                    <div>
-                      <span className='text-gray-500 text-sm'>Added</span>
-                      <p className='text-gray-800 font-medium'>
-                        {moment(product.createdAt).fromNow()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className='flex items-center'>
-                    <FaStar className='mr-3 text-gray-500' />
-                    <div>
-                      <span className='text-gray-500 text-sm'>Reviews</span>
-                      <p className='text-gray-800 font-medium'>
-                        {product.numReviews}
-                      </p>
-                    </div>
-                  </div>
-                  <div className='flex items-center'>
-                    <FaBox className='mr-3 text-gray-500' />
-                    <div>
-                      <span className='text-gray-500 text-sm'>
-                        Availability
+                  <div className='flex items-center mb-8'>
+                    <p className='text-4xl font-bold text-white'>
+                      ${product.price}
+                    </p>
+                    {product.quantity > 0 ? (
+                      <span className='ml-4 px-3 py-1 bg-[rgba(211,190,249,0.15)] text-[rgb(211,190,249)] text-sm font-medium rounded-full'>
+                        In Stock
                       </span>
-                      <p className='text-gray-800 font-medium'>
-                        {product.quantity > 0
-                          ? `${product.quantity} in stock`
-                          : 'Out of Stock'}
-                      </p>
+                    ) : (
+                      <span className='ml-4 px-3 py-1 bg-[rgba(255,82,82,0.15)] text-red-400 text-sm font-medium rounded-full'>
+                        Out of Stock
+                      </span>
+                    )}
+                  </div>
+                  <p className='text-gray-300 mb-8 leading-relaxed'>
+                    {product.description}
+                  </p>
+
+                  {/* Product Information Grid */}
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8 border-t border-b border-gray-700 py-8'>
+                    <div className='flex items-center'>
+                      <div className='mr-4 w-10 h-10 rounded-lg bg-[rgba(211,190,249,0.1)] flex items-center justify-center text-[rgb(211,190,249)]'>
+                        <FaStore />
+                      </div>
+                      <div>
+                        <span className='text-gray-400 text-sm'>Brand</span>
+                        <p className='text-white font-medium'>
+                          {product.brand}
+                        </p>
+                      </div>
+                    </div>
+                    <div className='flex items-center'>
+                      <div className='mr-4 w-10 h-10 rounded-lg bg-[rgba(211,190,249,0.1)] flex items-center justify-center text-[rgb(211,190,249)]'>
+                        <FaClock />
+                      </div>
+                      <div>
+                        <span className='text-gray-400 text-sm'>Added</span>
+                        <p className='text-white font-medium'>
+                          {moment(product.createdAt).fromNow()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className='flex items-center'>
+                      <div className='mr-4 w-10 h-10 rounded-lg bg-[rgba(211,190,249,0.1)] flex items-center justify-center text-[rgb(211,190,249)]'>
+                        <FaStar />
+                      </div>
+                      <div>
+                        <span className='text-gray-400 text-sm'>Reviews</span>
+                        <p className='text-white font-medium'>
+                          {product.numReviews}
+                        </p>
+                      </div>
+                    </div>
+                    <div className='flex items-center'>
+                      <div className='mr-4 w-10 h-10 rounded-lg bg-[rgba(211,190,249,0.1)] flex items-center justify-center text-[rgb(211,190,249)]'>
+                        <FaBox />
+                      </div>
+                      <div>
+                        <span className='text-gray-400 text-sm'>
+                          Availability
+                        </span>
+                        <p className='text-white font-medium'>
+                          {product.quantity > 0
+                            ? `${product.quantity} in stock`
+                            : 'Out of Stock'}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Add to Cart Section */}
-                <div className='flex flex-wrap items-center gap-4'>
-                  {product.quantity > 0 && (
-                    <div className='w-24'>
-                      <select
-                        value={qty}
-                        onChange={(e) => setQty(Number(e.target.value))}
-                        className='w-full p-2 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500'
-                      >
-                        {[...Array(Math.min(product.quantity, 20)).keys()].map(
-                          (x) => (
+                  {/* Add to Cart Section */}
+                  <div className='flex flex-wrap items-center gap-4'>
+                    {product.quantity > 0 && (
+                      <div className='w-24'>
+                        <select
+                          value={qty}
+                          onChange={(e) => setQty(Number(e.target.value))}
+                          className='w-full p-3 bg-[rgb(7,10,19)] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[rgb(211,190,249)] focus:border-transparent'
+                        >
+                          {[
+                            ...Array(Math.min(product.quantity, 20)).keys(),
+                          ].map((x) => (
                             <option key={x + 1} value={x + 1}>
                               {x + 1}
                             </option>
-                          )
-                        )}
-                      </select>
-                    </div>
-                  )}
-                  <button
-                    onClick={addToCartHandler}
-                    disabled={product.quantity === 0 || isAddingToCart}
-                    className={`flex-1 py-3 px-6 rounded-lg font-medium text-white ${
-                      product.quantity === 0 || isAddingToCart
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-gray-800 hover:bg-gray-700 transition-colors'
-                    }`}
-                  >
-                    {isAddingToCart ? (
-                      <span className='flex items-center justify-center'>
-                        <svg
-                          className='animate-spin -ml-1 mr-2 h-4 w-4 text-white'
-                          xmlns='http://www.w3.org/2000/svg'
-                          fill='none'
-                          viewBox='0 0 24 24'
-                        >
-                          <circle
-                            className='opacity-25'
-                            cx='12'
-                            cy='12'
-                            r='10'
-                            stroke='currentColor'
-                            strokeWidth='4'
-                          ></circle>
-                          <path
-                            className='opacity-75'
-                            fill='currentColor'
-                            d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                          ></path>
-                        </svg>
-                        Adding...
-                      </span>
-                    ) : product.quantity === 0 ? (
-                      'Out of Stock'
-                    ) : (
-                      'Add to Cart'
+                          ))}
+                        </select>
+                      </div>
                     )}
-                  </button>
+                    <button
+                      onClick={addToCartHandler}
+                      disabled={product.quantity === 0 || isAddingToCart}
+                      className={`flex-1 py-4 px-6 rounded-lg font-medium text-white flex items-center justify-center ${
+                        product.quantity === 0 || isAddingToCart
+                          ? 'bg-gray-700 cursor-not-allowed'
+                          : 'bg-[rgb(211,190,249)] text-[rgb(7,10,19)] hover:bg-opacity-90 shadow-lg hover:shadow-[0_0_15px_rgba(211,190,249,0.4)] transition-all duration-300'
+                      }`}
+                    >
+                      {isAddingToCart ? (
+                        <span className='flex items-center justify-center'>
+                          <svg
+                            className='animate-spin -ml-1 mr-3 h-5 w-5'
+                            xmlns='http://www.w3.org/2000/svg'
+                            fill='none'
+                            viewBox='0 0 24 24'
+                          >
+                            <circle
+                              className='opacity-25'
+                              cx='12'
+                              cy='12'
+                              r='10'
+                              stroke='currentColor'
+                              strokeWidth='4'
+                            ></circle>
+                            <path
+                              className='opacity-75'
+                              fill='currentColor'
+                              d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                            ></path>
+                          </svg>
+                          Adding to Cart...
+                        </span>
+                      ) : product.quantity === 0 ? (
+                        'Out of Stock'
+                      ) : (
+                        <>
+                          <FaShoppingCart className='mr-2' /> Add to Cart
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Product Tabs Section */}
-          <div className='bg-white rounded-lg shadow-sm mb-12'>
-            <ProductTabs
-              loadingProductReview={loadingProductReview}
-              userInfo={userInfo}
-              submitHandler={submitHandler}
-              rating={rating}
-              setRating={setRating}
-              comment={comment}
-              setComment={setComment}
-              product={product}
-            />
-          </div>
-        </>
-      )}
+            {/* Product Tabs Section */}
+            <div className='bg-[rgb(13,17,29)] rounded-xl shadow-lg mb-12 border border-gray-800'>
+              <ProductTabs
+                loadingProductReview={loadingProductReview}
+                userInfo={userInfo}
+                submitHandler={submitHandler}
+                rating={rating}
+                setRating={setRating}
+                comment={comment}
+                setComment={setComment}
+                product={product}
+              />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }

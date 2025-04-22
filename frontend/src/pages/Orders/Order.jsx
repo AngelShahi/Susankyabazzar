@@ -68,7 +68,6 @@ const Order = () => {
 
   const handlePayment = async () => {
     try {
-      // Admin function to mark order as paid
       await payOrder({
         orderId,
         email_address: order.user?.email || '',
@@ -91,269 +90,589 @@ const Order = () => {
   }
 
   return isLoading ? (
-    <Loader />
+    <div className='flex justify-center items-center min-h-screen bg-[rgb(7,10,19)]'>
+      <Loader />
+    </div>
   ) : error ? (
-    <Message variant='danger'>{error.data.message}</Message>
+    <div className='min-h-screen bg-[rgb(7,10,19)] flex items-center justify-center'>
+      <Message variant='danger'>{error.data.message}</Message>
+    </div>
   ) : (
-    <div className='container mx-auto px-4 bg-white flex flex-col md:flex-row max-w-6xl'>
-      <div className='md:w-2/3 pr-0 md:pr-6'>
-        <div className='border border-gray-200 mt-5 pb-4 mb-5 rounded-lg shadow-sm bg-white'>
-          <h2 className='text-xl font-bold mb-4 p-4 border-b border-gray-200 bg-gray-50'>
-            Order Items
-          </h2>
-          {order.orderItems.length === 0 ? (
-            <Message>Order is empty</Message>
-          ) : (
-            <div className='overflow-x-auto p-4'>
-              <table className='w-full'>
-                <thead className='border-b border-gray-200'>
-                  <tr className='bg-gray-50'>
-                    <th className='p-2 text-left text-gray-700'>Image</th>
-                    <th className='p-2 text-left text-gray-700'>Product</th>
-                    <th className='p-2 text-center text-gray-700'>Quantity</th>
-                    <th className='p-2 text-right text-gray-700'>Unit Price</th>
-                    <th className='p-2 text-right text-gray-700'>Total</th>
-                  </tr>
-                </thead>
+    <div className='min-h-screen bg-[rgb(7,10,19)] py-8'>
+      <div className='container mx-auto px-4 flex flex-col md:flex-row max-w-6xl gap-6'>
+        <div className='md:w-2/3'>
+          <div className='border border-[rgba(211,190,249,0.3)] rounded-lg shadow-lg shadow-[rgba(211,190,249,0.1)] bg-[rgba(15,18,30,0.95)] backdrop-blur-sm mb-6 overflow-hidden'>
+            <h2 className='text-xl font-bold mb-0 p-4 border-b border-[rgba(211,190,249,0.2)] bg-[rgba(211,190,249,0.1)] text-white flex items-center'>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                className='h-5 w-5 mr-2 text-[rgb(211,190,249)]'
+                viewBox='0 0 20 20'
+                fill='currentColor'
+              >
+                <path d='M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z' />
+              </svg>
+              Order Items
+            </h2>
 
-                <tbody>
-                  {order.orderItems.map((item, index) => (
-                    <tr
-                      key={index}
-                      className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-                    >
-                      <td className='p-2'>
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className='w-16 h-16 object-cover rounded border border-gray-200'
-                        />
-                      </td>
-
-                      <td className='p-2 text-gray-800'>
-                        <Link
-                          to={`/product/${item.product}`}
-                          className='hover:text-gray-600 transition-colors'
-                        >
-                          {item.name}
-                        </Link>
-                      </td>
-
-                      <td className='p-2 text-center text-gray-800'>
-                        {item.qty}
-                      </td>
-                      <td className='p-2 text-right text-gray-800'>
-                        ${item.price}
-                      </td>
-                      <td className='p-2 text-right font-medium text-gray-800'>
-                        ${(item.qty * item.price).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className='md:w-1/3'>
-        <div className='mt-5 border border-gray-200 rounded-lg shadow-sm p-4 mb-4 bg-white'>
-          <h2 className='text-xl font-bold mb-2 pb-2 border-b border-gray-200 text-gray-800'>
-            Shipping Details
-          </h2>
-          <p className='mb-3 mt-4'>
-            <strong className='text-gray-700'>Order:</strong>{' '}
-            <span className='text-gray-600'>{order._id}</span>
-          </p>
-
-          {/* Fixed: Added conditional check for order.user */}
-          {order.user && (
-            <>
-              <p className='mb-3'>
-                <strong className='text-gray-700'>Name:</strong>{' '}
-                <span className='text-gray-600'>{order.user.username}</span>
-              </p>
-
-              <p className='mb-3'>
-                <strong className='text-gray-700'>Email:</strong>{' '}
-                <span className='text-gray-600'>{order.user.email}</span>
-              </p>
-            </>
-          )}
-
-          <p className='mb-3'>
-            <strong className='text-gray-700'>Address:</strong>{' '}
-            <span className='text-gray-600'>
-              {order.shippingAddress.address}, {order.shippingAddress.city}{' '}
-              {order.shippingAddress.postalCode},{' '}
-              {order.shippingAddress.country}
-            </span>
-          </p>
-
-          <p className='mb-3'>
-            <strong className='text-gray-700'>Method:</strong>{' '}
-            <span className='text-gray-600'>{order.paymentMethod}</span>
-          </p>
-
-          <div className='mt-4'>
-            {order.isPaid ? (
-              <div className='bg-gray-100 border border-gray-300 text-gray-700 p-3 rounded'>
-                Paid on {order.paidAt}
+            {order.orderItems.length === 0 ? (
+              <div className='p-4'>
+                <Message>Order is empty</Message>
               </div>
             ) : (
-              <div className='bg-gray-100 border border-gray-300 text-gray-700 p-3 rounded'>
-                Not paid
+              <div className='overflow-x-auto p-4'>
+                <table className='w-full'>
+                  <thead>
+                    <tr className='bg-[rgba(211,190,249,0.1)] text-[rgb(211,190,249)]'>
+                      <th className='p-3 text-left rounded-tl-md'>Image</th>
+                      <th className='p-3 text-left'>Product</th>
+                      <th className='p-3 text-center'>Quantity</th>
+                      <th className='p-3 text-right'>Unit Price</th>
+                      <th className='p-3 text-right rounded-tr-md'>Total</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {order.orderItems.map((item, index) => (
+                      <tr
+                        key={index}
+                        className={`border-b ${
+                          index === order.orderItems.length - 1
+                            ? ''
+                            : 'border-[rgba(211,190,249,0.1)]'
+                        } hover:bg-[rgba(211,190,249,0.05)] transition-colors`}
+                      >
+                        <td className='p-4'>
+                          <div className='w-20 h-20 rounded-md overflow-hidden border border-[rgba(211,190,249,0.3)]'>
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className='w-full h-full object-cover'
+                            />
+                          </div>
+                        </td>
+
+                        <td className='p-4 text-gray-200'>
+                          <Link
+                            to={`/product/${item.product}`}
+                            className='hover:text-[rgb(211,190,249)] transition-colors font-medium'
+                          >
+                            {item.name}
+                          </Link>
+                        </td>
+
+                        <td className='p-4 text-center text-gray-200'>
+                          <span className='bg-[rgba(211,190,249,0.1)] px-3 py-1 rounded-full'>
+                            {item.qty}
+                          </span>
+                        </td>
+
+                        <td className='p-4 text-right text-gray-200'>
+                          ${item.price.toFixed(2)}
+                        </td>
+
+                        <td className='p-4 text-right font-medium text-[rgb(211,190,249)]'>
+                          ${(item.qty * item.price).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
+          </div>
+        </div>
 
-            <div className='mt-3'>
-              {order.isDelivered ? (
-                <div className='bg-gray-100 border border-gray-300 text-gray-700 p-3 rounded'>
-                  Delivered on {order.deliveredAt}
-                </div>
-              ) : (
-                <div className='bg-gray-100 border border-gray-300 text-gray-700 p-3 rounded'>
-                  Not delivered
+        <div className='md:w-1/3 space-y-6'>
+          <div className='border border-[rgba(211,190,249,0.3)] rounded-lg shadow-lg shadow-[rgba(211,190,249,0.1)] bg-[rgba(15,18,30,0.95)] backdrop-blur-sm overflow-hidden'>
+            <h2 className='text-xl font-bold p-4 border-b border-[rgba(211,190,249,0.2)] bg-[rgba(211,190,249,0.1)] text-white flex items-center'>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                className='h-5 w-5 mr-2 text-[rgb(211,190,249)]'
+                viewBox='0 0 20 20'
+                fill='currentColor'
+              >
+                <path
+                  fillRule='evenodd'
+                  d='M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z'
+                  clipRule='evenodd'
+                />
+              </svg>
+              Shipping Details
+            </h2>
+
+            <div className='p-4 space-y-3 text-gray-300'>
+              <div className='bg-[rgba(211,190,249,0.05)] p-3 rounded-md border border-[rgba(211,190,249,0.1)]'>
+                <p className='text-sm text-gray-400'>Order ID</p>
+                <p className='font-mono text-white truncate'>{order._id}</p>
+              </div>
+
+              {order.user && (
+                <div className='space-y-3'>
+                  <div className='bg-[rgba(211,190,249,0.05)] p-3 rounded-md border border-[rgba(211,190,249,0.1)]'>
+                    <p className='text-sm text-gray-400'>Customer</p>
+                    <p className='text-white'>{order.user.username}</p>
+                  </div>
+
+                  <div className='bg-[rgba(211,190,249,0.05)] p-3 rounded-md border border-[rgba(211,190,249,0.1)]'>
+                    <p className='text-sm text-gray-400'>Email</p>
+                    <p className='text-white'>{order.user.email}</p>
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
 
-        <div className='border border-gray-200 rounded-lg shadow-sm p-4 mb-6 bg-white'>
-          <h2 className='text-xl font-bold mb-4 pb-2 border-b border-gray-200 text-gray-800'>
-            Order Summary
-          </h2>
-          <div className='flex justify-between mb-2 text-gray-700'>
-            <span>Items</span>
-            <span>$ {order.itemsPrice}</span>
-          </div>
-          <div className='flex justify-between mb-2 text-gray-700'>
-            <span>Shipping</span>
-            <span>$ {order.shippingPrice}</span>
-          </div>
-          <div className='flex justify-between mb-2 text-gray-700'>
-            <span>Tax</span>
-            <span>$ {order.taxPrice}</span>
-          </div>
-          <div className='flex justify-between pt-2 border-t border-gray-200 mt-2 font-bold text-gray-800'>
-            <span>Total</span>
-            <span>$ {order.totalPrice}</span>
-          </div>
-        </div>
-
-        {/* Payment proof section for customers */}
-        {!order.isPaid && userInfo && !userInfo.isAdmin && (
-          <div className='border border-gray-200 rounded-lg shadow-sm p-4 mb-6 bg-white'>
-            <h3 className='text-lg font-bold mb-3 pb-2 border-b border-gray-200 text-gray-800'>
-              Upload Payment Proof
-            </h3>
-
-            {order.paymentProofImage ? (
-              <div className='mb-4'>
-                <p className='text-gray-700 mb-2'>Payment proof uploaded</p>
-                <img
-                  src={order.paymentProofImage}
-                  alt='Payment Proof'
-                  className='w-full h-auto rounded-md border border-gray-200'
-                />
-                <p className='text-sm text-gray-500 mt-2'>
-                  Waiting for admin approval
+              <div className='bg-[rgba(211,190,249,0.05)] p-3 rounded-md border border-[rgba(211,190,249,0.1)]'>
+                <p className='text-sm text-gray-400'>Address</p>
+                <p className='text-white'>
+                  {order.shippingAddress.address}, {order.shippingAddress.city}{' '}
+                  {order.shippingAddress.postalCode},{' '}
+                  {order.shippingAddress.country}
                 </p>
               </div>
-            ) : (
-              <div className='mb-4'>
-                <div className='mb-3'>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>
-                    Upload Receipt/Screenshot
-                  </label>
-                  <input
-                    type='file'
-                    className='mt-1 w-full border border-gray-300 p-2 rounded bg-gray-50'
-                    onChange={uploadFileHandler}
-                  />
-                  {uploading && <Loader />}
+
+              <div className='bg-[rgba(211,190,249,0.05)] p-3 rounded-md border border-[rgba(211,190,249,0.1)]'>
+                <p className='text-sm text-gray-400'>Payment Method</p>
+                <p className='text-white'>{order.paymentMethod}</p>
+              </div>
+
+              <div className='flex gap-3 mt-4'>
+                <div
+                  className={`flex-1 p-3 rounded-md border ${
+                    order.isPaid
+                      ? 'bg-[rgba(129,230,217,0.1)] border-[rgba(129,230,217,0.3)] text-[rgb(129,230,217)]'
+                      : 'bg-[rgba(255,177,153,0.1)] border-[rgba(255,177,153,0.3)] text-[rgb(255,177,153)]'
+                  }`}
+                >
+                  <p className='text-sm opacity-80'>Payment Status</p>
+                  <div className='flex items-center'>
+                    {order.isPaid ? (
+                      <>
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          className='h-4 w-4 mr-1'
+                          viewBox='0 0 20 20'
+                          fill='currentColor'
+                        >
+                          <path
+                            fillRule='evenodd'
+                            d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
+                            clipRule='evenodd'
+                          />
+                        </svg>
+                        <span>
+                          Paid on {new Date(order.paidAt).toLocaleDateString()}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          className='h-4 w-4 mr-1'
+                          viewBox='0 0 20 20'
+                          fill='currentColor'
+                        >
+                          <path
+                            fillRule='evenodd'
+                            d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
+                            clipRule='evenodd'
+                          />
+                        </svg>
+                        <span>Not paid</span>
+                      </>
+                    )}
+                  </div>
                 </div>
 
-                {paymentProofImage && (
-                  <div className='mt-4'>
-                    <img
-                      src={paymentProofImage}
-                      alt='Payment Preview'
-                      className='w-full h-auto rounded-md border border-gray-200 mb-3'
-                    />
-                    <button
-                      onClick={handlePaymentProofSubmit}
-                      disabled={loadingProofUpload}
-                      className='bg-gray-700 hover:bg-gray-800 text-white py-2 px-4 rounded transition-colors font-semibold w-full'
-                    >
-                      {loadingProofUpload
-                        ? 'Submitting...'
-                        : 'Submit Payment Proof'}
-                    </button>
+                <div
+                  className={`flex-1 p-3 rounded-md border ${
+                    order.isDelivered
+                      ? 'bg-[rgba(129,230,217,0.1)] border-[rgba(129,230,217,0.3)] text-[rgb(129,230,217)]'
+                      : 'bg-[rgba(255,177,153,0.1)] border-[rgba(255,177,153,0.3)] text-[rgb(255,177,153)]'
+                  }`}
+                >
+                  <p className='text-sm opacity-80'>Delivery Status</p>
+                  <div className='flex items-center'>
+                    {order.isDelivered ? (
+                      <>
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          className='h-4 w-4 mr-1'
+                          viewBox='0 0 20 20'
+                          fill='currentColor'
+                        >
+                          <path
+                            fillRule='evenodd'
+                            d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
+                            clipRule='evenodd'
+                          />
+                        </svg>
+                        <span>
+                          Delivered{' '}
+                          {new Date(order.deliveredAt).toLocaleDateString()}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          className='h-4 w-4 mr-1'
+                          viewBox='0 0 20 20'
+                          fill='currentColor'
+                        >
+                          <path
+                            fillRule='evenodd'
+                            d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
+                            clipRule='evenodd'
+                          />
+                        </svg>
+                        <span>Not delivered</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className='border border-[rgba(211,190,249,0.3)] rounded-lg shadow-lg shadow-[rgba(211,190,249,0.1)] bg-[rgba(15,18,30,0.95)] backdrop-blur-sm overflow-hidden'>
+            <h2 className='text-xl font-bold p-4 border-b border-[rgba(211,190,249,0.2)] bg-[rgba(211,190,249,0.1)] text-white flex items-center'>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                className='h-5 w-5 mr-2 text-[rgb(211,190,249)]'
+                viewBox='0 0 20 20'
+                fill='currentColor'
+              >
+                <path
+                  fillRule='evenodd'
+                  d='M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z'
+                  clipRule='evenodd'
+                />
+              </svg>
+              Order Summary
+            </h2>
+
+            <div className='p-4 space-y-2 text-gray-300'>
+              <div className='flex justify-between mb-2'>
+                <span>Items</span>
+                <span className='font-medium'>$ {order.itemsPrice}</span>
+              </div>
+
+              <div className='flex justify-between mb-2'>
+                <span>Shipping</span>
+                <span className='font-medium'>$ {order.shippingPrice}</span>
+              </div>
+
+              <div className='flex justify-between mb-2'>
+                <span>Tax</span>
+                <span className='font-medium'>$ {order.taxPrice}</span>
+              </div>
+
+              <div className='flex justify-between pt-3 border-t border-[rgba(211,190,249,0.2)] mt-3 font-bold text-white'>
+                <span>Total</span>
+                <span className='text-[rgb(211,190,249)]'>
+                  $ {order.totalPrice}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment proof section for customers */}
+          {!order.isPaid && userInfo && !userInfo.isAdmin && (
+            <div className='border border-[rgba(211,190,249,0.3)] rounded-lg shadow-lg shadow-[rgba(211,190,249,0.1)] bg-[rgba(15,18,30,0.95)] backdrop-blur-sm overflow-hidden'>
+              <h3 className='text-lg font-bold p-4 border-b border-[rgba(211,190,249,0.2)] bg-[rgba(211,190,249,0.1)] text-white flex items-center'>
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  className='h-5 w-5 mr-2 text-[rgb(211,190,249)]'
+                  viewBox='0 0 20 20'
+                  fill='currentColor'
+                >
+                  <path
+                    fillRule='evenodd'
+                    d='M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z'
+                    clipRule='evenodd'
+                  />
+                </svg>
+                Upload Payment Proof
+              </h3>
+
+              <div className='p-4'>
+                {order.paymentProofImage ? (
+                  <div className='mb-4'>
+                    <p className='text-gray-300 mb-2'>Payment proof uploaded</p>
+                    <div className='border border-[rgba(211,190,249,0.3)] rounded-lg overflow-hidden'>
+                      <img
+                        src={order.paymentProofImage}
+                        alt='Payment Proof'
+                        className='w-full h-auto'
+                      />
+                    </div>
+                    <div className='mt-3 flex items-center justify-center p-2 bg-[rgba(129,230,217,0.1)] border border-[rgba(129,230,217,0.3)] rounded-md text-[rgb(129,230,217)]'>
+                      <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        className='h-5 w-5 mr-2'
+                        viewBox='0 0 20 20'
+                        fill='currentColor'
+                      >
+                        <path d='M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z' />
+                      </svg>
+                      <span className='text-sm'>
+                        Waiting for admin approval
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className='space-y-4'>
+                    <div>
+                      <label className='block text-sm font-medium text-[rgb(211,190,249)] mb-2'>
+                        Upload Receipt/Screenshot
+                      </label>
+                      <div className='border-2 border-dashed border-[rgba(211,190,249,0.3)] rounded-lg p-4 text-center cursor-pointer hover:border-[rgb(211,190,249)] transition-colors'>
+                        <input
+                          type='file'
+                          className='hidden'
+                          id='payment-proof'
+                          onChange={uploadFileHandler}
+                        />
+                        <label
+                          htmlFor='payment-proof'
+                          className='cursor-pointer'
+                        >
+                          <svg
+                            xmlns='http://www.w3.org/2000/svg'
+                            className='h-10 w-10 mx-auto text-[rgba(211,190,249,0.5)]'
+                            fill='none'
+                            viewBox='0 0 24 24'
+                            stroke='currentColor'
+                          >
+                            <path
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              strokeWidth={1.5}
+                              d='M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12'
+                            />
+                          </svg>
+                          <p className='mt-2 text-sm text-gray-400'>
+                            Click to select or drag and drop
+                          </p>
+                          <p className='text-xs text-gray-500'>
+                            JPG, PNG or PDF (Max 5MB)
+                          </p>
+                        </label>
+                      </div>
+                      {uploading && (
+                        <div className='mt-4 flex justify-center'>
+                          <Loader />
+                        </div>
+                      )}
+                    </div>
+
+                    {paymentProofImage && (
+                      <div className='mt-4 space-y-4'>
+                        <div className='border border-[rgba(211,190,249,0.3)] rounded-lg overflow-hidden'>
+                          <img
+                            src={paymentProofImage}
+                            alt='Payment Preview'
+                            className='w-full h-auto'
+                          />
+                        </div>
+                        <button
+                          onClick={handlePaymentProofSubmit}
+                          disabled={loadingProofUpload}
+                          className='bg-[rgb(211,190,249)] hover:bg-[rgb(191,170,229)] text-[rgb(7,10,19)] py-3 px-4 rounded-md transition-colors font-semibold w-full flex items-center justify-center'
+                        >
+                          {loadingProofUpload ? (
+                            <>
+                              <svg
+                                className='animate-spin -ml-1 mr-2 h-4 w-4 text-[rgb(7,10,19)]'
+                                xmlns='http://www.w3.org/2000/svg'
+                                fill='none'
+                                viewBox='0 0 24 24'
+                              >
+                                <circle
+                                  className='opacity-25'
+                                  cx='12'
+                                  cy='12'
+                                  r='10'
+                                  stroke='currentColor'
+                                  strokeWidth='4'
+                                ></circle>
+                                <path
+                                  className='opacity-75'
+                                  fill='currentColor'
+                                  d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                                ></path>
+                              </svg>
+                              Submitting...
+                            </>
+                          ) : (
+                            <>
+                              <svg
+                                xmlns='http://www.w3.org/2000/svg'
+                                className='h-5 w-5 mr-2'
+                                viewBox='0 0 20 20'
+                                fill='currentColor'
+                              >
+                                <path
+                                  fillRule='evenodd'
+                                  d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+                                  clipRule='evenodd'
+                                />
+                              </svg>
+                              Submit Payment Proof
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
+                    <div className='flex items-center justify-center gap-2 text-gray-400 mt-3 p-3 bg-[rgba(211,190,249,0.05)] rounded-md'>
+                      <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        className='h-5 w-5 text-[rgb(211,190,249)]'
+                        viewBox='0 0 20 20'
+                        fill='currentColor'
+                      >
+                        <path
+                          fillRule='evenodd'
+                          d='M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z'
+                          clipRule='evenodd'
+                        />
+                      </svg>
+                      <span className='text-sm'>
+                        Upload a clear receipt screenshot
+                      </span>
+                    </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
 
-                <div className='flex items-center justify-center gap-2 text-gray-500 mt-3'>
+          {/* Admin controls - view proof and mark as paid */}
+          {userInfo &&
+            userInfo.isAdmin &&
+            !order.isPaid &&
+            order.paymentProofImage && (
+              <div className='border border-[rgba(211,190,249,0.3)] rounded-lg shadow-lg shadow-[rgba(211,190,249,0.1)] bg-[rgba(15,18,30,0.95)] backdrop-blur-sm overflow-hidden'>
+                <h3 className='text-lg font-bold p-4 border-b border-[rgba(211,190,249,0.2)] bg-[rgba(211,190,249,0.1)] text-white flex items-center'>
                   <svg
                     xmlns='http://www.w3.org/2000/svg'
-                    className='h-5 w-5'
+                    className='h-5 w-5 mr-2 text-[rgb(211,190,249)]'
                     viewBox='0 0 20 20'
                     fill='currentColor'
                   >
                     <path
                       fillRule='evenodd'
-                      d='M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z'
+                      d='M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z'
                       clipRule='evenodd'
                     />
                   </svg>
-                  <span className='text-sm'>Upload receipt screenshot</span>
+                  Payment Verification
+                </h3>
+
+                <div className='p-4 space-y-4'>
+                  <div className='border border-[rgba(211,190,249,0.3)] rounded-lg overflow-hidden'>
+                    <img
+                      src={order.paymentProofImage}
+                      alt='Payment Proof'
+                      className='w-full h-auto'
+                    />
+                  </div>
+
+                  <button
+                    onClick={handlePayment}
+                    className='bg-[rgb(211,190,249)] hover:bg-[rgb(191,170,229)] text-[rgb(7,10,19)] py-3 px-4 rounded-md transition-colors font-semibold w-full flex items-center justify-center'
+                    disabled={loadingPay}
+                  >
+                    {loadingPay ? (
+                      <>
+                        <svg
+                          className='animate-spin -ml-1 mr-2 h-4 w-4 text-[rgb(7,10,19)]'
+                          xmlns='http://www.w3.org/2000/svg'
+                          fill='none'
+                          viewBox='0 0 24 24'
+                        >
+                          <circle
+                            className='opacity-25'
+                            cx='12'
+                            cy='12'
+                            r='10'
+                            stroke='currentColor'
+                            strokeWidth='4'
+                          ></circle>
+                          <path
+                            className='opacity-75'
+                            fill='currentColor'
+                            d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                          ></path>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          className='h-5 w-5 mr-2'
+                          viewBox='0 0 20 20'
+                          fill='currentColor'
+                        >
+                          <path
+                            fillRule='evenodd'
+                            d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+                            clipRule='evenodd'
+                          />
+                        </svg>
+                        Verify & Mark As Paid
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Admin controls - view proof and mark as paid */}
-        {userInfo &&
-          userInfo.isAdmin &&
-          !order.isPaid &&
-          order.paymentProofImage && (
-            <div className='border border-gray-200 rounded-lg shadow-sm p-4 mb-6 bg-white'>
-              <h3 className='text-lg font-bold mb-3 pb-2 border-b border-gray-200 text-gray-800'>
-                Payment Proof
-              </h3>
-              <div className='mb-4'>
-                <img
-                  src={order.paymentProofImage}
-                  alt='Payment Proof'
-                  className='w-full h-auto rounded-md border border-gray-200 mb-3'
-                />
-                <button
-                  onClick={handlePayment}
-                  className='bg-gray-700 hover:bg-gray-800 text-white py-2 px-4 rounded transition-colors font-semibold w-full'
-                  disabled={loadingPay}
-                >
-                  {loadingPay ? 'Processing...' : 'Verify & Mark As Paid'}
-                </button>
+          {/* Admin controls - mark as delivered */}
+          {loadingDeliver && <Loader />}
+          {userInfo &&
+            userInfo.isAdmin &&
+            order.isPaid &&
+            !order.isDelivered && (
+              <div className='border border-[rgba(211,190,249,0.3)] rounded-lg shadow-lg shadow-[rgba(211,190,249,0.1)] bg-[rgba(15,18,30,0.95)] backdrop-blur-sm overflow-hidden'>
+                <h3 className='text-lg font-bold p-4 border-b border-[rgba(211,190,249,0.2)] bg-[rgba(211,190,249,0.1)] text-white flex items-center'>
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    className='h-5 w-5 mr-2 text-[rgb(211,190,249)]'
+                    viewBox='0 0 20 20'
+                    fill='currentColor'
+                  >
+                    <path d='M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z' />
+                    <path d='M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1v-5h2a1 1 0 001-1V7a1 1 0 00-.55-.9L8.8 3.4A1 1 0 008.35 3H5a2 2 0 00-2 1z' />
+                  </svg>
+                  Delivery Status
+                </h3>
+
+                <div className='p-4'>
+                  <button
+                    type='button'
+                    className='bg-[rgb(211,190,249)] hover:bg-[rgb(191,170,229)] text-[rgb(7,10,19)] py-3 px-4 rounded-md transition-colors font-semibold w-full flex items-center justify-center'
+                    onClick={deliverHandler}
+                  >
+                    <svg
+                      xmlns='http://www.w3.org/2000/svg'
+                      className='h-5 w-5 mr-2'
+                      viewBox='0 0 20 20'
+                      fill='currentColor'
+                    >
+                      <path
+                        fillRule='evenodd'
+                        d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+                        clipRule='evenodd'
+                      />
+                    </svg>
+                    Mark As Delivered
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-
-        {/* Admin controls - mark as delivered */}
-        {loadingDeliver && <Loader />}
-        {userInfo && userInfo.isAdmin && order.isPaid && !order.isDelivered && (
-          <div className='mt-4 mb-6'>
-            <button
-              type='button'
-              className='bg-gray-700 hover:bg-gray-800 text-white w-full py-2 rounded transition-colors'
-              onClick={deliverHandler}
-            >
-              Mark As Delivered
-            </button>
-          </div>
-        )}
+            )}
+        </div>
       </div>
     </div>
   )

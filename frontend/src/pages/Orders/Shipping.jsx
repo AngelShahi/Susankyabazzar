@@ -70,107 +70,217 @@ const Shipping = () => {
   }
 
   return (
-    <div className='container mx-auto px-4 max-w-6xl bg-white'>
-      <ProgressSteps step1 step2 />
-      <div className='mt-8 md:mt-12 flex justify-center'>
-        <div className='w-full max-w-lg'>
-          <div className='bg-white p-6 border border-gray-200 rounded-lg shadow-sm'>
-            <h1 className='text-2xl font-semibold mb-6 text-gray-800 pb-2 border-b border-gray-200'>
-              Shipping & Payment
-            </h1>
+    <div
+      style={{ backgroundColor: 'rgb(7, 10, 19)', minHeight: '100vh' }}
+      className='py-8'
+    >
+      <div className='container mx-auto px-4 max-w-6xl'>
+        <ProgressSteps step1 step2 />
+        <div className='mt-8 md:mt-12 flex justify-center'>
+          <div className='w-full max-w-lg'>
+            <div
+              className='p-6 rounded-lg shadow-lg'
+              style={{
+                backgroundColor: 'rgba(15, 20, 35, 0.8)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(211, 190, 249, 0.2)',
+              }}
+            >
+              <h1
+                className='text-2xl font-semibold mb-6 pb-2 border-b'
+                style={{
+                  color: 'rgba(211, 190, 249, 0.9)',
+                  borderColor: 'rgba(211, 190, 249, 0.2)',
+                }}
+              >
+                Shipping & Payment
+              </h1>
 
-            {isLoading ? (
-              <div className='text-center py-4'>Loading...</div>
-            ) : (
-              <form onSubmit={submitHandler}>
-                <div className='mb-4'>
-                  <label className='block text-gray-700 font-medium mb-2'>
-                    Address
-                  </label>
-                  <input
-                    type='text'
-                    className='w-full p-3 border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500'
-                    placeholder='Enter address'
-                    value={address}
-                    required
-                    onChange={(e) => setAddress(e.target.value)}
-                  />
-                </div>
-
-                <div className='mb-4'>
-                  <label className='block text-gray-700 font-medium mb-2'>
-                    City
-                  </label>
-                  <input
-                    type='text'
-                    className='w-full p-3 border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500'
-                    placeholder='Enter city'
-                    value={city}
-                    required
-                    onChange={(e) => setCity(e.target.value)}
-                  />
-                </div>
-
-                <div className='mb-4'>
-                  <label className='block text-gray-700 font-medium mb-2'>
-                    Postal Code
-                  </label>
-                  <input
-                    type='text'
-                    className='w-full p-3 border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500'
-                    placeholder='Enter postal code'
-                    value={postalCode}
-                    required
-                    onChange={(e) => setPostalCode(e.target.value)}
-                  />
-                </div>
-
-                <div className='mb-6'>
-                  <label className='block text-gray-700 font-medium mb-2'>
-                    Country
-                  </label>
-                  <input
-                    type='text'
-                    className='w-full p-3 border border-gray-300 rounded bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500'
-                    placeholder='Enter country'
-                    value={country}
-                    required
-                    onChange={(e) => setCountry(e.target.value)}
-                  />
-                </div>
-
-                <div className='mb-6 pt-4 border-t border-gray-200'>
-                  <label className='block text-gray-700 font-medium mb-3'>
-                    Payment Method
-                  </label>
-                  <div className='bg-gray-50 p-4 border border-gray-200 rounded'>
-                    <label className='flex items-center cursor-pointer'>
-                      <input
-                        type='radio'
-                        className='h-5 w-5 text-gray-700'
-                        name='paymentMethod'
-                        value='Esewa'
-                        checked={paymentMethod === 'Esewa'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                      />
-                      <span className='ml-3 text-gray-800'>
-                        Esewa or Banking
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                <button
-                  className='bg-gray-700 hover:bg-gray-800 text-white py-3 px-4 rounded font-medium w-full transition-colors disabled:bg-gray-400'
-                  type='submit'
-                  disabled={isShippingAddressLoading || isPaymentMethodLoading}
+              {isLoading ? (
+                <div
+                  className='text-center py-4'
+                  style={{ color: 'rgba(211, 190, 249, 0.7)' }}
                 >
-                  {isShippingAddressLoading || isPaymentMethodLoading
-                    ? 'Saving...'
-                    : 'Continue to Place Order'}
-                </button>
-              </form>
-            )}
+                  Loading...
+                </div>
+              ) : (
+                <form onSubmit={submitHandler}>
+                  <div className='mb-4'>
+                    <label
+                      className='block mb-2 font-medium'
+                      style={{ color: 'rgba(211, 190, 249, 0.8)' }}
+                    >
+                      Address
+                    </label>
+                    <input
+                      type='text'
+                      className='w-full p-3 rounded focus:outline-none focus:ring-2'
+                      style={{
+                        backgroundColor: 'rgba(7, 10, 19, 0.7)',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        border: '1px solid rgba(211, 190, 249, 0.3)',
+                        boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+                      }}
+                      placeholder='Enter address'
+                      value={address}
+                      required
+                      onChange={(e) => setAddress(e.target.value)}
+                    />
+                  </div>
+
+                  <div className='mb-4'>
+                    <label
+                      className='block mb-2 font-medium'
+                      style={{ color: 'rgba(211, 190, 249, 0.8)' }}
+                    >
+                      City
+                    </label>
+                    <input
+                      type='text'
+                      className='w-full p-3 rounded focus:outline-none focus:ring-2'
+                      style={{
+                        backgroundColor: 'rgba(7, 10, 19, 0.7)',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        border: '1px solid rgba(211, 190, 249, 0.3)',
+                        boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+                      }}
+                      placeholder='Enter city'
+                      value={city}
+                      required
+                      onChange={(e) => setCity(e.target.value)}
+                    />
+                  </div>
+
+                  <div className='mb-4'>
+                    <label
+                      className='block mb-2 font-medium'
+                      style={{ color: 'rgba(211, 190, 249, 0.8)' }}
+                    >
+                      Postal Code
+                    </label>
+                    <input
+                      type='text'
+                      className='w-full p-3 rounded focus:outline-none focus:ring-2'
+                      style={{
+                        backgroundColor: 'rgba(7, 10, 19, 0.7)',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        border: '1px solid rgba(211, 190, 249, 0.3)',
+                        boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+                      }}
+                      placeholder='Enter postal code'
+                      value={postalCode}
+                      required
+                      onChange={(e) => setPostalCode(e.target.value)}
+                    />
+                  </div>
+
+                  <div className='mb-6'>
+                    <label
+                      className='block mb-2 font-medium'
+                      style={{ color: 'rgba(211, 190, 249, 0.8)' }}
+                    >
+                      Country
+                    </label>
+                    <input
+                      type='text'
+                      className='w-full p-3 rounded focus:outline-none focus:ring-2'
+                      style={{
+                        backgroundColor: 'rgba(7, 10, 19, 0.7)',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        border: '1px solid rgba(211, 190, 249, 0.3)',
+                        boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+                      }}
+                      placeholder='Enter country'
+                      value={country}
+                      required
+                      onChange={(e) => setCountry(e.target.value)}
+                    />
+                  </div>
+
+                  <div
+                    className='mb-6 pt-4 border-t'
+                    style={{ borderColor: 'rgba(211, 190, 249, 0.2)' }}
+                  >
+                    <label
+                      className='block mb-3 font-medium'
+                      style={{ color: 'rgba(211, 190, 249, 0.8)' }}
+                    >
+                      Payment Method
+                    </label>
+                    <div
+                      className='p-4 rounded'
+                      style={{
+                        backgroundColor: 'rgba(7, 10, 19, 0.7)',
+                        border: '1px solid rgba(211, 190, 249, 0.3)',
+                      }}
+                    >
+                      <label className='flex items-center cursor-pointer'>
+                        <input
+                          type='radio'
+                          className='h-5 w-5'
+                          style={{ accentColor: 'rgb(211, 190, 249)' }}
+                          name='paymentMethod'
+                          value='Esewa'
+                          checked={paymentMethod === 'Esewa'}
+                          onChange={(e) => setPaymentMethod(e.target.value)}
+                        />
+                        <span
+                          className='ml-3'
+                          style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                        >
+                          Esewa or Banking
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <button
+                    className='py-3 px-4 rounded font-medium w-full transition-all'
+                    style={{
+                      backgroundColor:
+                        isShippingAddressLoading || isPaymentMethodLoading
+                          ? 'rgba(211, 190, 249, 0.5)'
+                          : 'rgba(211, 190, 249, 0.9)',
+                      color: 'rgb(7, 10, 19)',
+                      boxShadow: '0 4px 12px rgba(211, 190, 249, 0.5)',
+                      transform: 'translateY(0)',
+                    }}
+                    onMouseOver={(e) => {
+                      if (
+                        !isShippingAddressLoading &&
+                        !isPaymentMethodLoading
+                      ) {
+                        e.currentTarget.style.backgroundColor =
+                          'rgba(211, 190, 249, 1)'
+                        e.currentTarget.style.boxShadow =
+                          '0 6px 16px rgba(211, 190, 249, 0.7)'
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      if (
+                        !isShippingAddressLoading &&
+                        !isPaymentMethodLoading
+                      ) {
+                        e.currentTarget.style.backgroundColor =
+                          'rgba(211, 190, 249, 0.9)'
+                        e.currentTarget.style.boxShadow =
+                          '0 4px 12px rgba(211, 190, 249, 0.5)'
+                        e.currentTarget.style.transform = 'translateY(0)'
+                      }
+                    }}
+                    type='submit'
+                    disabled={
+                      isShippingAddressLoading || isPaymentMethodLoading
+                    }
+                  >
+                    {isShippingAddressLoading || isPaymentMethodLoading
+                      ? 'Saving...'
+                      : 'Continue to Place Order'}
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       </div>
