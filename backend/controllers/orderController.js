@@ -260,6 +260,41 @@ const markOrderAsDelivered = async (req, res) => {
     res.status(500).json({ error: error.message })
   }
 }
+const cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+
+    if (!order) {
+      res.status(404)
+      throw new Error('Order not found')
+    }
+
+    // Check if the user is authorized (either admin or the order owner)
+    if (
+      order.user.toString() !== req.user._id.toString() &&
+      !req.user.isAdmin
+    ) {
+      res.status(401)
+      throw new Error('Not authorized')
+    }
+
+    // Can only cancel if not paid yet
+    if (order.isPaid) {
+      res.status(400)
+      throw new Error('Cannot cancel paid orders')
+    }
+
+    // Store cancellation details
+    order.isCancelled = true
+    order.cancelledAt = Date.now()
+    order.cancellationReason = req.body.reason || 'No reason provided'
+
+    const updatedOrder = await order.save()
+    res.status(200).json(updatedOrder)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
 
 // Export the new function
 export {
@@ -273,4 +308,5 @@ export {
   uploadPaymentProof,
   markOrderAsPaid,
   markOrderAsDelivered,
+  cancelOrder,
 }

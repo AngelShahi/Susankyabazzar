@@ -64,17 +64,59 @@ export const userApiSlice = apiSlice.injectEndpoints({
         body: data,
       }),
     }),
+    // Password reset endpoints
+    requestPasswordResetOtp: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/forgot-password`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    verifyResetOtp: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/verify-reset-otp`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    resetPassword: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/reset-password`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    // Profile update OTP endpoints
+    requestProfileUpdateOtp: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/request-profile-update-otp`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    verifyProfileUpdateOtp: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/verify-profile-update-otp`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 })
 
 export const {
   useLoginMutation,
-  useRegisterMutation,
   useLogoutMutation,
   useProfileMutation,
+  useRegisterMutation,
   useGetUsersQuery,
   useDeleteUserMutation,
   useGetUserDetailsQuery,
   useUpdateUserMutation,
-  useVerifyOtpMutation, // ✅ updated name for consistency
+  useVerifyOtpMutation,
+  useRequestPasswordResetOtpMutation,
+  useVerifyResetOtpMutation,
+  useResetPasswordMutation,
+  useRequestProfileUpdateOtpMutation,
+  useVerifyProfileUpdateOtpMutation,
 } = userApiSlice

@@ -84,6 +84,22 @@ const orderSchema = mongoose.Schema(
     deliveredAt: {
       type: Date,
     },
+
+    // New fields for order cancellation
+    isCancelled: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+
+    cancelledAt: {
+      type: Date,
+    },
+
+    cancellationReason: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

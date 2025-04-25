@@ -20,6 +20,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useLogoutMutation } from '../../redux/api/usersApiSlice'
 import { logout } from '../../redux/features/auth/authSlice'
 import FavoritesCount from '../Products/FavoritesCount'
+import CartCount from '../Products/CartCount'
 import { clearFavorites } from '../../redux/features/favorites/favoriteSlice'
 
 // CSS for the dark gray glossy glass effect with purple accents
@@ -177,7 +178,10 @@ const Navigation = () => {
           to='/admin/dashboard'
           className='flex items-center p-3 px-4 rounded-lg hover:bg-gray-800 text-gray-200'
         >
-          <AiOutlineDashboard size={20} style={{ color: 'rgb(211, 190, 249)' }} />
+          <AiOutlineDashboard
+            size={20}
+            style={{ color: 'rgb(211, 190, 249)' }}
+          />
           <span
             className={`ml-3 whitespace-nowrap transition-opacity duration-300 ${
               sidebarExpanded ? 'opacity-100' : 'opacity-0 absolute'
@@ -205,7 +209,10 @@ const Navigation = () => {
           to='/admin/categorylist'
           className='flex items-center p-3 px-4 rounded-lg hover:bg-gray-800 text-gray-200'
         >
-          <AiOutlineUnorderedList size={20} style={{ color: 'rgb(211, 190, 249)' }} />
+          <AiOutlineUnorderedList
+            size={20}
+            style={{ color: 'rgb(211, 190, 249)' }}
+          />
           <span
             className={`ml-3 whitespace-nowrap transition-opacity duration-300 ${
               sidebarExpanded ? 'opacity-100' : 'opacity-0 absolute'
@@ -219,7 +226,10 @@ const Navigation = () => {
           to='/admin/orderlist'
           className='flex items-center p-3 px-4 rounded-lg hover:bg-gray-800 text-gray-200'
         >
-          <AiOutlineFileText size={20} style={{ color: 'rgb(211, 190, 249)' }} />
+          <AiOutlineFileText
+            size={20}
+            style={{ color: 'rgb(211, 190, 249)' }}
+          />
           <span
             className={`ml-3 whitespace-nowrap transition-opacity duration-300 ${
               sidebarExpanded ? 'opacity-100' : 'opacity-0 absolute'
@@ -306,7 +316,11 @@ const Navigation = () => {
     <nav className='glass-effect sticky top-0 z-50 w-full py-4 px-6 flex justify-between items-center relative bg-gray-900'>
       {/* Logo on left */}
       <div className='flex items-center'>
-        <Link to='/' style={{ color: 'rgb(211, 190, 249)' }} className='text-xl font-bold'>
+        <Link
+          to='/'
+          style={{ color: 'rgb(211, 190, 249)' }}
+          className='text-xl font-bold'
+        >
           Susankyabazzar
         </Link>
       </div>
@@ -326,12 +340,7 @@ const Navigation = () => {
               <div className='flex items-center relative'>
                 <AiOutlineShoppingCart size={20} className='mr-1' />
                 <span>Cart</span>
-                {cartItems.length > 0 && (
-                  <span className='absolute -top-2 -right-2 px-1.5 py-0.5 text-xs text-white font-medium rounded-full' 
-                    style={{ backgroundColor: 'rgb(211, 190, 249)' }}>
-                    {cartItems.reduce((a, c) => a + c.qty, 0)}
-                  </span>
-                )}
+                <CartCount /> {/* Use the CartCount component */}
               </div>
             </NavLink>
 
@@ -345,8 +354,12 @@ const Navigation = () => {
           </>
         ) : (
           <>
-            <NavLink to='/login' isActive={isActivePath('/login')}>Login</NavLink>
-            <NavLink to='/register' isActive={isActivePath('/register')}>Register</NavLink>
+            <NavLink to='/login' isActive={isActivePath('/login')}>
+              Login
+            </NavLink>
+            <NavLink to='/register' isActive={isActivePath('/register')}>
+              Register
+            </NavLink>
           </>
         )}
       </div>
@@ -359,7 +372,11 @@ const Navigation = () => {
               onClick={toggleDropdown}
               className='flex items-center text-gray-200 hover:text-purple-300 transition-colors duration-300'
             >
-              <FaUserCircle size={20} className='mr-1' style={{ color: 'rgb(211, 190, 249)' }} />
+              <FaUserCircle
+                size={20}
+                className='mr-1'
+                style={{ color: 'rgb(211, 190, 249)' }}
+              />
               <span>{userInfo.username}</span>
               <svg
                 xmlns='http://www.w3.org/2000/svg'
@@ -381,8 +398,10 @@ const Navigation = () => {
             </button>
 
             {dropdownOpen && (
-              <div className='absolute right-0 mt-2 w-48 glass-effect-dropdown rounded-lg shadow-lg z-50 border border-opacity-20' 
-                  style={{ borderColor: 'rgb(211, 190, 249)' }}>
+              <div
+                className='absolute right-0 mt-2 w-48 glass-effect-dropdown rounded-lg shadow-lg z-50 border border-opacity-20'
+                style={{ borderColor: 'rgb(211, 190, 249)' }}
+              >
                 {userInfo.isAdmin && (
                   <Link
                     to='/admin/dashboard'
@@ -428,8 +447,10 @@ const Navigation = () => {
 
       {/* Mobile menu */}
       {showMobileMenu && (
-        <div className='md:hidden absolute top-full left-0 right-0 glass-effect border-t border-opacity-20'
-             style={{ borderColor: 'rgb(211, 190, 249)' }}>
+        <div
+          className='md:hidden absolute top-full left-0 right-0 glass-effect border-t border-opacity-20'
+          style={{ borderColor: 'rgb(211, 190, 249)' }}
+        >
           <div className='px-4 py-3 space-y-3'>
             <MobileNavLink to='/' onClick={() => setShowMobileMenu(false)}>
               Home
@@ -451,12 +472,8 @@ const Navigation = () => {
                       style={{ color: 'rgb(211, 190, 249)' }}
                     />
                     <span>Cart</span>
-                    {cartItems.length > 0 && (
-                      <span className='ml-2 px-1.5 py-0.5 text-xs text-white font-medium rounded-full'
-                            style={{ backgroundColor: 'rgb(211, 190, 249)' }}>
-                        {cartItems.reduce((a, c) => a + c.qty, 0)}
-                      </span>
-                    )}
+                    {/* Use CartCount here too */}
+                    <CartCount />
                   </div>
                 </MobileNavLink>
                 <MobileNavLink
@@ -464,8 +481,13 @@ const Navigation = () => {
                   onClick={() => setShowMobileMenu(false)}
                 >
                   <div className='flex items-center'>
-                    <FaHeart size={16} className='mr-2' style={{ color: 'rgb(211, 190, 249)' }} />
+                    <FaHeart
+                      size={16}
+                      className='mr-2'
+                      style={{ color: 'rgb(211, 190, 249)' }}
+                    />
                     <span>Favorites</span>
+                    <FavoritesCount />
                   </div>
                 </MobileNavLink>
                 <MobileNavLink
@@ -521,9 +543,9 @@ const Navigation = () => {
           after:origin-bottom-right after:transition-transform after:duration-300
           hover:after:scale-x-100 hover:after:origin-bottom-left hover:text-purple-300
           ${isActive ? 'text-purple-300 after:scale-x-100' : ''}`}
-        style={{ 
+        style={{
           '--hover-color': 'rgb(211, 190, 249)',
-          '--active-color': 'rgb(211, 190, 249)'
+          '--active-color': 'rgb(211, 190, 249)',
         }}
       >
         {children}

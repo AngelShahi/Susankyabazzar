@@ -3,9 +3,13 @@ import { AiOutlineShoppingCart } from 'react-icons/ai'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
 import HeartIcon from './HeartIcon'
-import { useAddToCartMutation } from '../../redux/features/cart/cartApiSlice'
+import {
+  useAddToCartMutation,
+  useGetCartQuery,
+} from '../../redux/features/cart/cartApiSlice'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import { setCart } from '../../redux/features/cart/cartSlice'
 
 const ProductCard = ({ p }) => {
   const dispatch = useDispatch()
@@ -14,6 +18,8 @@ const ProductCard = ({ p }) => {
   const [isAddingToCart, setIsAddingToCart] = useState(false)
 
   const [addToCartApi] = useAddToCartMutation()
+  // Add this to get the refetch function and data
+  const { data: cartData, refetch } = useGetCartQuery()
 
   const addToCartHandler = async (product, qty) => {
     // Check if product is out of stock
@@ -41,13 +47,22 @@ const ProductCard = ({ p }) => {
         qty,
         product: product._id,
         countInStock: product.quantity, // Using quantity as countInStock
-      })
+      }).unwrap() // Use unwrap to properly handle the promise
+
+      // Refetch the cart data
+      const updatedCartData = await refetch().unwrap()
+
+      // Update the Redux store with the new cart data
+      if (updatedCartData) {
+        dispatch(setCart(updatedCartData))
+      }
 
       toast.success('Item added successfully', {
         position: 'top-right',
         autoClose: 2000,
       })
     } catch (error) {
+      console.error('Failed to add item to cart:', error)
       toast.error('Failed to add item to cart', {
         position: 'top-right',
         autoClose: 2000,

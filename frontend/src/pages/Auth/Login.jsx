@@ -218,13 +218,17 @@ const Login = () => {
               </div>
 
               <div className='text-sm'>
-                <a
-                  href='#'
+                <Link
+                  to={
+                    redirect
+                      ? `/forgotpassword?redirect=${redirect}`
+                      : '/forgotpassword'
+                  }
                   className='font-medium hover:opacity-80 transition-opacity duration-200'
                   style={{ color: styles.accentColor }}
                 >
                   Forgot password?
-                </a>
+                </Link>
               </div>
             </div>
 

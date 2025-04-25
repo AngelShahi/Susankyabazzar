@@ -69,6 +69,14 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         url: `${ORDERS_URL}/${orderId}/pay`,
       }),
     }),
+    // Add this new mutation
+    cancelOrder: builder.mutation({
+      query: ({ orderId, reason }) => ({
+        url: `${ORDERS_URL}/${orderId}/cancel`,
+        method: 'PUT',
+        body: { reason },
+      }),
+    }),
   }),
 })
 
@@ -84,4 +92,5 @@ export const {
   useDeliverOrderMutation,
   useGetOrdersQuery,
   useUploadPaymentProofMutation,
+  useCancelOrderMutation,
 } = orderApiSlice
