@@ -51,20 +51,26 @@ const Shipping = () => {
     e.preventDefault()
 
     try {
-      // Save shipping address
-      await saveShippingAddress({
+      console.log('Saving shipping address...')
+      // Wait for shipping address save to complete
+      const shippingResult = await saveShippingAddress({
         address,
         city,
         postalCode,
         country,
       }).unwrap()
+      console.log('Shipping address saved successfully:', shippingResult)
 
-      // Save payment method
-      await savePaymentMethod({ paymentMethod }).unwrap()
+      console.log('Saving payment method...')
+      // Wait for payment method save to complete
+      const paymentResult = await savePaymentMethod({ paymentMethod }).unwrap()
+      console.log('Payment method saved successfully:', paymentResult)
 
-      // Navigate to place order page
-      navigate('/placeorder')
+      // Only navigate after both operations are successful
+      console.log('Redirecting to place order page...')
+      navigate('/placeorder', { replace: true })
     } catch (error) {
+      console.error('Error during form submission:', error)
       toast.error(error?.data?.message || 'Failed to save shipping information')
     }
   }

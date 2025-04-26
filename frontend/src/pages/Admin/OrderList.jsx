@@ -45,6 +45,9 @@ const OrderList = () => {
                       Total
                     </th>
                     <th className='px-4 py-3 text-left text-xs font-medium uppercase tracking-wider'>
+                      Status
+                    </th>
+                    <th className='px-4 py-3 text-left text-xs font-medium uppercase tracking-wider'>
                       Paid
                     </th>
                     <th className='px-4 py-3 text-left text-xs font-medium uppercase tracking-wider'>
@@ -106,9 +109,25 @@ const OrderList = () => {
                       </td>
 
                       <td className='px-4 py-3 text-sm'>
+                        {order.isCancelled ? (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-gray-700 text-gray-300'>
+                            Cancelled
+                          </span>
+                        ) : (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-blue-900 text-blue-300'>
+                            Active
+                          </span>
+                        )}
+                      </td>
+
+                      <td className='px-4 py-3 text-sm'>
                         {order.isPaid ? (
                           <span className='px-2 py-1 text-xs font-medium rounded-full bg-green-900 text-green-300'>
                             Completed
+                          </span>
+                        ) : order.isCancelled ? (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-gray-700 text-gray-300'>
+                            N/A
                           </span>
                         ) : (
                           <span className='px-2 py-1 text-xs font-medium rounded-full bg-red-900 text-red-300'>
@@ -122,6 +141,10 @@ const OrderList = () => {
                           <span className='px-2 py-1 text-xs font-medium rounded-full bg-green-900 text-green-300'>
                             Completed
                           </span>
+                        ) : order.isCancelled ? (
+                          <span className='px-2 py-1 text-xs font-medium rounded-full bg-gray-700 text-gray-300'>
+                            N/A
+                          </span>
                         ) : (
                           <span className='px-2 py-1 text-xs font-medium rounded-full bg-red-900 text-red-300'>
                             Pending
@@ -131,8 +154,14 @@ const OrderList = () => {
 
                       <td className='px-4 py-3 text-sm text-right'>
                         <Link to={`/order/${order._id}`}>
-                          <button className='bg-[rgb(211,190,249)] text-gray-900 px-4 py-1 rounded hover:bg-[rgb(191,170,229)] transition-colors duration-200 font-medium text-sm'>
-                            View Details
+                          <button
+                            className={`px-4 py-1 rounded font-medium text-sm transition-colors duration-200 ${
+                              order.isCancelled
+                                ? 'bg-gray-600 hover:bg-gray-500 text-white'
+                                : 'bg-[rgb(211,190,249)] hover:bg-[rgb(191,170,229)] text-gray-900'
+                            }`}
+                          >
+                            {order.isCancelled ? 'View Reason' : 'View Details'}
                           </button>
                         </Link>
                       </td>
