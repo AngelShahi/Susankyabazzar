@@ -22,6 +22,7 @@ import CategoryList from './pages/Admin/CategoryList'
 import ProductList from './pages/Admin/ProductList'
 import AllProducts from './pages/Admin/AllProducts'
 import ProductUpdate from './pages/Admin/ProductUpdate'
+import DiscountManager from './pages/Admin/DiscountManager.jsx'
 
 import Home from './pages/Home.jsx'
 import Favorites from './pages/Products/Favorites.jsx'
@@ -34,7 +35,6 @@ import Shipping from './pages/Orders/Shipping.jsx'
 import PlaceOrder from './pages/Orders/PlaceOrder.jsx'
 import Order from './pages/Orders/Order.jsx'
 import OrderList from './pages/Admin/OrderList.jsx'
-import { PayPalScriptProvider } from '@paypal/react-paypal-js'
 import AdminDashboard from './pages/Admin/AdminDashboard.jsx'
 import OrderHistoryScreen from './pages/Orders/OrderHistoryScreen.jsx'
 
@@ -67,16 +67,16 @@ const router = createBrowserRouter(
         <Route path='productlist/:pageNumber' element={<ProductList />} />
         <Route path='product/update/:_id' element={<ProductUpdate />} />
         <Route path='orderlist' element={<OrderList />} />
+        <Route path='discountManager' element={<DiscountManager />} />
         <Route path='dashboard' element={<AdminDashboard />} />
       </Route>
     </Route>
   )
 )
-
-ReactDOM.createRoot(document.getElementById('root')).render(
+// Add this at the bottom of your main file (often index.js or main.jsx)
+const root = ReactDOM.createRoot(document.getElementById('root'))
+root.render(
   <Provider store={store}>
-    <PayPalScriptProvider>
-      <RouterProvider router={router} />
-    </PayPalScriptProvider>
+    <RouterProvider router={router} />
   </Provider>
 )

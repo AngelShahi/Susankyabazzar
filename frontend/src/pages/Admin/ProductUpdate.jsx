@@ -91,6 +91,15 @@ const AdminProductUpdate = () => {
   const [stock, setStock] = useState(false)
   const [imageModified, setImageModified] = useState(false)
 
+  // Discount state
+  const [hasDiscount, setHasDiscount] = useState(false)
+  const [discountPercentage, setDiscountPercentage] = useState('')
+  const [discountStartDate, setDiscountStartDate] = useState(new Date())
+  const [discountEndDate, setDiscountEndDate] = useState(
+    new Date(new Date().setDate(new Date().getDate() + 30))
+  )
+  const [discountName, setDiscountName] = useState('')
+
   // Initialize form data when product data is loaded
   useEffect(() => {
     if (productData && productData._id && !formSubmitting.current) {
@@ -106,6 +115,30 @@ const AdminProductUpdate = () => {
       setStock(productData.quantity > 0)
       // Reset image modified flag when product data changes
       setImageModified(false)
+
+      // Handle discount data
+      if (productData.discount) {
+        setHasDiscount(true)
+        setDiscountPercentage(productData.discount.percentage || '')
+        setDiscountName(productData.discount.name || '')
+
+        // Check if dates are valid before setting them
+        if (productData.discount.startDate) {
+          setDiscountStartDate(new Date(productData.discount.startDate))
+        }
+        if (productData.discount.endDate) {
+          setDiscountEndDate(new Date(productData.discount.endDate))
+        }
+      } else {
+        setHasDiscount(false)
+        setDiscountPercentage('')
+        setDiscountName('')
+        setDiscountStartDate(new Date())
+        setDiscountEndDate(
+          new Date(new Date().setDate(new Date().getDate() + 30))
+        )
+      }
+
       initialLoadComplete.current = true
     }
   }, [productData])
@@ -129,6 +162,25 @@ const AdminProductUpdate = () => {
       setImageModified(true)
     } catch (err) {
       toast.error('Image upload failed: ' + (err.data?.message || err.error))
+    }
+  }
+
+  const handleDiscountToggle = () => {
+    setHasDiscount(!hasDiscount)
+  }
+
+  const handleRemoveDiscount = () => {
+    const confirm = window.confirm(
+      'Are you sure you want to remove the discount?'
+    )
+    if (confirm) {
+      setHasDiscount(false)
+      setDiscountPercentage('')
+      setDiscountName('')
+      setDiscountStartDate(new Date())
+      setDiscountEndDate(
+        new Date(new Date().setDate(new Date().getDate() + 30))
+      )
     }
   }
 
@@ -161,6 +213,20 @@ const AdminProductUpdate = () => {
       // Only include image if it was modified or it exists
       if (imageModified || image) {
         formData.append('image', image)
+      }
+
+      // Handle discount information
+      if (hasDiscount) {
+        const discountData = {
+          percentage: discountPercentage,
+          name: discountName,
+          startDate: discountStartDate,
+          endDate: discountEndDate,
+        }
+        formData.append('discount', JSON.stringify(discountData))
+      } else {
+        // If there's no discount or discount was removed, send null to remove it
+        formData.append('discount', 'null')
       }
 
       // Log form data for debugging
@@ -205,6 +271,11 @@ const AdminProductUpdate = () => {
       console.error('Delete error:', err)
       toast.error(err.data?.error || 'Delete failed. Try again.')
     }
+  }
+
+  // Format date for display
+  const formatDate = (date) => {
+    return date.toISOString().split('T')[0]
   }
 
   // Show loading state
@@ -392,6 +463,145 @@ const AdminProductUpdate = () => {
                 rows={5}
                 placeholder='Detailed product description'
               />
+            </div>
+
+            {/* Discount Section */}
+            <div className='mt-8 border-t border-gray-700 pt-6'>
+              <div className='flex items-center justify-between mb-4'>
+                <h3 className='text-xl font-bold text-[rgb(211,190,249)]'>
+                  Product Discount
+                </h3>
+                <div className='flex items-center'>
+                  <label className='inline-flex items-center cursor-pointer mr-4'>
+                    <input
+                      type='checkbox'
+                      checked={hasDiscount}
+                      onChange={handleDiscountToggle}
+                      className='sr-only peer'
+                    />
+                    <div className='relative w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[""] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[rgb(211,190,249)]'></div>
+                    <span className='ml-3 text-sm font-medium text-gray-300'>
+                      {hasDiscount ? 'Discount Active' : 'No Discount'}
+                    </span>
+                  </label>
+
+                  {hasDiscount && (
+                    <button
+                      type='button'
+                      onClick={handleRemoveDiscount}
+                      className='bg-red-500 bg-opacity-20 text-red-400 px-3 py-1 rounded-md hover:bg-opacity-30 transition-colors text-sm flex items-center'
+                    >
+                      <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        className='h-4 w-4 mr-1'
+                        fill='none'
+                        viewBox='0 0 24 24'
+                        stroke='currentColor'
+                      >
+                        <path
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
+                          strokeWidth={2}
+                          d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
+                        />
+                      </svg>
+                      Remove Discount
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {hasDiscount && (
+                <div className='bg-[rgba(211,190,249,0.05)] p-5 rounded-xl border border-[rgba(211,190,249,0.2)]'>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    {/* Discount Name */}
+                    <div>
+                      <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
+                        Discount Name
+                      </label>
+                      <input
+                        type='text'
+                        className='p-4 w-full border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none transition-all'
+                        value={discountName}
+                        onChange={(e) => setDiscountName(e.target.value)}
+                        placeholder='E.g., Summer Sale'
+                      />
+                    </div>
+
+                    {/* Discount Percentage */}
+                    <div>
+                      <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
+                        Discount Percentage (%)
+                      </label>
+                      <div className='flex items-center'>
+                        <input
+                          type='number'
+                          className='p-4 w-full border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none transition-all'
+                          value={discountPercentage}
+                          onChange={(e) =>
+                            setDiscountPercentage(e.target.value)
+                          }
+                          placeholder='E.g., 15'
+                          min='1'
+                          max='99'
+                        />
+                        <span className='ml-2 text-xl text-white'>%</span>
+                      </div>
+                    </div>
+
+                    {/* Discount Date Range */}
+                    <div>
+                      <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
+                        Start Date
+                      </label>
+                      <input
+                        type='date'
+                        className='p-4 w-full border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none transition-all'
+                        value={formatDate(discountStartDate)}
+                        onChange={(e) =>
+                          setDiscountStartDate(new Date(e.target.value))
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
+                        End Date
+                      </label>
+                      <input
+                        type='date'
+                        className='p-4 w-full border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none transition-all'
+                        value={formatDate(discountEndDate)}
+                        onChange={(e) =>
+                          setDiscountEndDate(new Date(e.target.value))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {/* Display calculated price after discount */}
+                  {discountPercentage && price && (
+                    <div className='mt-4 p-3 bg-[rgba(211,190,249,0.1)] rounded-lg'>
+                      <p className='text-sm text-gray-300'>
+                        Original price:{' '}
+                        <span className='text-white font-medium'>
+                          ${parseFloat(price).toFixed(2)}
+                        </span>
+                      </p>
+                      <p className='text-sm text-gray-300'>
+                        Price after {discountPercentage}% discount:{' '}
+                        <span className='text-[rgb(211,190,249)] font-medium'>
+                          $
+                          {(
+                            parseFloat(price) *
+                            (1 - parseFloat(discountPercentage) / 100)
+                          ).toFixed(2)}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}

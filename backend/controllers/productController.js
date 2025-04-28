@@ -304,6 +304,153 @@ const filterProducts = asyncHandler(async (req, res) => {
   }
 })
 
+/**
+ * @desc    Apply discount to a product
+ * @route   PUT /api/products/:id/discount
+ * @access  Private/Admin
+ */
+const applyProductDiscount = asyncHandler(async (req, res) => {
+  try {
+    const { percentage, startDate, endDate, name } = req.body
+
+    if (!percentage || percentage < 0 || percentage > 100) {
+      return res
+        .status(400)
+        .json({ error: 'Valid discount percentage (0-100) is required' })
+    }
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start and end dates are required' })
+    }
+
+    const product = await Product.findById(req.params.id)
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' })
+    }
+
+    product.discount = {
+      percentage: Number(percentage),
+      active: true,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      name: name || 'Special Offer',
+    }
+
+    await product.save()
+
+    res.json({
+      message: 'Discount applied successfully',
+      product,
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(400).json({ error: error.message })
+  }
+})
+
+/**
+ * @desc    Remove discount from a product
+ * @route   DELETE /api/products/:id/discount
+ * @access  Private/Admin
+ */
+const removeProductDiscount = asyncHandler(async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id)
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' })
+    }
+
+    product.discount = {
+      percentage: 0,
+      active: false,
+      startDate: null,
+      endDate: null,
+      name: '',
+    }
+
+    await product.save()
+
+    res.json({
+      message: 'Discount removed successfully',
+      product,
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(400).json({ error: error.message })
+  }
+})
+
+/**
+ * @desc    Apply bulk discount to multiple products
+ * @route   POST /api/products/bulk-discount
+ * @access  Private/Admin
+ */
+const applyBulkDiscount = asyncHandler(async (req, res) => {
+  try {
+    const {
+      productIds,
+      percentage,
+      startDate,
+      endDate,
+      name,
+      categoryIds,
+      brandNames,
+    } = req.body
+
+    if (!percentage || percentage < 0 || percentage > 100) {
+      return res
+        .status(400)
+        .json({ error: 'Valid discount percentage (0-100) is required' })
+    }
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'Start and end dates are required' })
+    }
+
+    let query = {}
+
+    // Apply to specific products if provided
+    if (productIds && productIds.length > 0) {
+      query._id = { $in: productIds }
+    }
+    // Apply to specific categories if provided
+    else if (categoryIds && categoryIds.length > 0) {
+      query.category = { $in: categoryIds }
+    }
+    // Apply to specific brands if provided
+    else if (brandNames && brandNames.length > 0) {
+      query.brand = { $in: brandNames }
+    }
+    // No filter means no update
+    else {
+      return res.status(400).json({
+        error:
+          'Please specify products, categories, or brands to apply discount',
+      })
+    }
+
+    const discountData = {
+      'discount.percentage': Number(percentage),
+      'discount.active': true,
+      'discount.startDate': new Date(startDate),
+      'discount.endDate': new Date(endDate),
+      'discount.name': name || 'Special Offer',
+    }
+
+    const result = await Product.updateMany(query, { $set: discountData })
+
+    res.json({
+      message: `Discount applied to ${result.modifiedCount} products`,
+      modifiedCount: result.modifiedCount,
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(400).json({ error: error.message })
+  }
+})
+
 // Exporting all controller functions
 export {
   addProduct,
@@ -316,4 +463,7 @@ export {
   fetchTopProducts,
   fetchNewProducts,
   filterProducts,
+  applyProductDiscount,
+  removeProductDiscount,
+  applyBulkDiscount,
 }

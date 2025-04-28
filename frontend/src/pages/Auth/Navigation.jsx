@@ -12,6 +12,7 @@ import {
   AiOutlineShop,
   AiOutlineUnorderedList,
   AiOutlineFileText,
+  AiOutlinePercentage,
 } from 'react-icons/ai'
 import { FaHeart, FaUserCircle } from 'react-icons/fa'
 import { Link, useLocation } from 'react-router-dom'
@@ -244,6 +245,23 @@ const Navigation = () => {
           className='flex items-center p-3 px-4 rounded-lg hover:bg-gray-800 text-gray-200'
         >
           <AiOutlineUser size={20} style={{ color: 'rgb(211, 190, 249)' }} />
+          <span
+            className={`ml-3 whitespace-nowrap transition-opacity duration-300 ${
+              sidebarExpanded ? 'opacity-100' : 'opacity-0 absolute'
+            }`}
+          >
+            Users
+          </span>
+        </Link>
+
+        <Link
+          to='/admin/DiscountManager'
+          className='flex items-center p-3 px-4 rounded-lg hover:bg-gray-800 text-gray-200'
+        >
+          <AiOutlinePercentage
+            size={20}
+            style={{ color: 'rgb(211, 190, 249)' }}
+          />
           <span
             className={`ml-3 whitespace-nowrap transition-opacity duration-300 ${
               sidebarExpanded ? 'opacity-100' : 'opacity-0 absolute'

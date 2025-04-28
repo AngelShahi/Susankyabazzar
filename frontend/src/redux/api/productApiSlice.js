@@ -4,10 +4,13 @@ import { apiSlice } from './apiSlice'
 export const productApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getProducts: builder.query({
-      query: ({ keyword = '', pageNumber = 1 }) => ({
-        url: `${PRODUCT_URL}`,
-        params: { keyword, pageNumber },
-      }),
+      query: (params = {}) => {
+        const { keyword = '', pageNumber = 1 } = params
+        return {
+          url: `${PRODUCT_URL}`,
+          params: { keyword, pageNumber },
+        }
+      },
       keepUnusedDataFor: 5,
       providesTags: ['Products'],
     }),
@@ -111,6 +114,43 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
       providesTags: ['Products'],
     }),
+
+    applyDiscount: builder.mutation({
+      query: ({ productId, discountData }) => ({
+        url: `${PRODUCT_URL}/${productId}/discount`,
+        method: 'PUT',
+        body: discountData,
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: 'Product', id: productId },
+        'Products',
+      ],
+    }),
+
+    removeDiscount: builder.mutation({
+      query: (productId) => ({
+        url: `${PRODUCT_URL}/${productId}/discount`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, productId) => [
+        { type: 'Product', id: productId },
+        'Products',
+      ],
+    }),
+
+    applyBulkDiscount: builder.mutation({
+      query: (discountData) => ({
+        url: `${PRODUCT_URL}/bulk-discount`,
+        method: 'POST',
+        body: discountData,
+      }),
+      invalidatesTags: ['Products'],
+    }),
+
+    allCategories: builder.query({
+      query: () => '/api/category/categories',
+      providesTags: ['Categories'],
+    }),
   }),
 })
 
@@ -127,4 +167,8 @@ export const {
   useGetNewProductsQuery,
   useUploadProductImageMutation,
   useGetFilteredProductsQuery,
+  useApplyDiscountMutation,
+  useRemoveDiscountMutation,
+  useApplyBulkDiscountMutation,
+  useAllCategoriesQuery,
 } = productApiSlice

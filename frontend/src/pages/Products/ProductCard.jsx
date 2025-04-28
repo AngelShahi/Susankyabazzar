@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { AiOutlineShoppingCart } from 'react-icons/ai'
+import { FaPercentage } from 'react-icons/fa'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
 import HeartIcon from './HeartIcon'
@@ -18,8 +19,14 @@ const ProductCard = ({ p }) => {
   const [isAddingToCart, setIsAddingToCart] = useState(false)
 
   const [addToCartApi] = useAddToCartMutation()
-  // Add this to get the refetch function and data
   const { data: cartData, refetch } = useGetCartQuery()
+
+  // Check if product has an active discount
+  const hasDiscount = p.discount && new Date(p.discount.endDate) >= new Date()
+  // Calculate the discounted price if there's an active discount
+  const discountedPrice = hasDiscount
+    ? p.price - p.price * (p.discount.percentage / 100)
+    : null
 
   const addToCartHandler = async (product, qty) => {
     // Check if product is out of stock
@@ -43,10 +50,11 @@ const ProductCard = ({ p }) => {
         _id: product._id,
         name: product.name,
         image: product.image,
-        price: product.price,
+        price: hasDiscount ? discountedPrice : product.price, // Use discounted price if available
         qty,
         product: product._id,
         countInStock: product.quantity, // Using quantity as countInStock
+        discount: hasDiscount ? product.discount : null, // Pass discount info to cart
       }).unwrap() // Use unwrap to properly handle the promise
 
       // Refetch the cart data
@@ -91,6 +99,14 @@ const ProductCard = ({ p }) => {
             </span>
           )}
 
+          {/* Discount badge - show if there's an active discount */}
+          {hasDiscount && (
+            <span className='absolute top-3 left-3 ml-20 bg-green-600 text-white text-xs font-medium px-2.5 py-0.5 rounded-full z-10 flex items-center'>
+              <FaPercentage size={12} className='mr-1' />
+              {p.discount.percentage}% OFF
+            </span>
+          )}
+
           <span className='absolute bottom-3 right-3 bg-[rgba(211,190,249,0.3)] text-[rgb(211,190,249)] text-xs font-medium px-2.5 py-0.5 rounded-full'>
             {p?.brand}
           </span>
@@ -119,12 +135,31 @@ const ProductCard = ({ p }) => {
           <h5 className='text-lg font-medium text-gray-100 line-clamp-2 group-hover:text-[rgb(211,190,249)]'>
             {p?.name}
           </h5>
-          <p className='font-bold text-[rgb(211,190,249)] ml-2 whitespace-nowrap'>
-            {p?.price?.toLocaleString('en-US', {
-              style: 'currency',
-              currency: 'USD',
-            })}
-          </p>
+          <div className='ml-2 whitespace-nowrap text-right'>
+            {hasDiscount ? (
+              <>
+                <p className='font-bold text-green-400'>
+                  {discountedPrice?.toLocaleString('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                  })}
+                </p>
+                <p className='text-gray-400 text-sm line-through'>
+                  {p?.price?.toLocaleString('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                  })}
+                </p>
+              </>
+            ) : (
+              <p className='font-bold text-[rgb(211,190,249)]'>
+                {p?.price?.toLocaleString('en-US', {
+                  style: 'currency',
+                  currency: 'USD',
+                })}
+              </p>
+            )}
+          </div>
         </div>
 
         <p className='mb-4 text-sm text-gray-400 line-clamp-2'>

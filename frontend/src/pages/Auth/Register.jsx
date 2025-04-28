@@ -64,11 +64,23 @@ const Register = () => {
     e.preventDefault()
     try {
       const response = await verifyOtp({ email, otp }).unwrap()
-      dispatch(setCredentials(response.data))
+      // Log the response to check structure
+      console.log('OTP verification response:', response)
+
+      // If the user data is nested inside response.data
+      dispatch(setCredentials(response))
       toast.success('OTP verified! You are now logged in.')
 
+      // Check if the registered user is an admin
+      if (response.isAdmin) {
+        toast.error('Admin registration is not allowed here.')
+        return
+      }
+
+      // If not admin, navigate normally
       if (redirect === '/') {
         navigate(redirect, { replace: true })
+        // Add window.location.reload() like in login component
         window.location.reload()
       } else {
         navigate(redirect)

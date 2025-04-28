@@ -14,6 +14,9 @@ import {
   fetchTopProducts,
   fetchNewProducts,
   filterProducts,
+  applyProductDiscount,
+  removeProductDiscount,
+  applyBulkDiscount,
 } from '../controllers/productController.js'
 import { authenticate, authorizeAdmin } from '../middlewares/authMiddleware.js'
 import checkId from '../middlewares/checkId.js'
@@ -34,6 +37,15 @@ router
   .get(fetchProductById)
   .put(authenticate, authorizeAdmin, formidable(), updateProductDetails)
   .delete(authenticate, authorizeAdmin, removeProduct)
+
+router
+  .route('/:id/discount')
+  .put(authenticate, authorizeAdmin, applyProductDiscount)
+  .delete(authenticate, authorizeAdmin, removeProductDiscount)
+
+router
+  .route('/bulk-discount')
+  .post(authenticate, authorizeAdmin, applyBulkDiscount)
 
 router.route('/filtered-products').post(filterProducts)
 

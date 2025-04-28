@@ -16,6 +16,8 @@ import {
   FaStar,
   FaStore,
   FaArrowLeft,
+  FaPercentage,
+  FaRegClock,
 } from 'react-icons/fa'
 import moment from 'moment'
 import HeartIcon from './HeartIcon'
@@ -45,6 +47,41 @@ const ProductDetails = () => {
 
   const [createReview, { isLoading: loadingProductReview }] =
     useCreateReviewMutation()
+
+  // Check if product has an active discount
+  const hasDiscount =
+    product &&
+    product.discount &&
+    new Date(product.discount.endDate) >= new Date()
+
+  // Calculate the discounted price if there's an active discount
+  const discountedPrice = hasDiscount
+    ? product.price - product.price * (product.discount.percentage / 100)
+    : null
+
+  // Format time remaining for discount (if applicable)
+  const formatTimeRemaining = (endDate) => {
+    const end = moment(endDate)
+    const now = moment()
+    const diff = end.diff(now)
+
+    if (diff <= 0) return 'Expired'
+
+    const duration = moment.duration(diff)
+    const days = Math.floor(duration.asDays())
+    const hours = duration.hours()
+
+    if (days > 0) {
+      return `${days} day${days !== 1 ? 's' : ''} ${hours} hr${
+        hours !== 1 ? 's' : ''
+      }`
+    } else {
+      const minutes = duration.minutes()
+      return `${hours} hr${hours !== 1 ? 's' : ''} ${minutes} min${
+        minutes !== 1 ? 's' : ''
+      }`
+    }
+  }
 
   const submitHandler = async (e) => {
     e.preventDefault()
@@ -82,10 +119,11 @@ const ProductDetails = () => {
         _id: product._id,
         name: product.name,
         image: product.image,
-        price: product.price,
+        price: hasDiscount ? discountedPrice : product.price, // Use discounted price if available
         qty,
         product: product._id,
         countInStock: product.quantity,
+        discount: hasDiscount ? product.discount : null, // Pass discount info to cart
       }).unwrap()
 
       toast.success(`Added ${product.name} to your cart`)
@@ -152,6 +190,16 @@ const ProductDetails = () => {
                     className='w-full h-auto object-cover'
                   />
                   <div className='absolute inset-0 bg-gradient-to-t from-[rgba(7,10,19,0.4)] to-transparent pointer-events-none'></div>
+
+                  {/* Discount badge - show if there's an active discount */}
+                  {hasDiscount && (
+                    <div className='absolute top-4 left-4 bg-green-600 text-white px-3 py-2 rounded-lg shadow-lg flex items-center'>
+                      <FaPercentage className='mr-2' />
+                      <span className='font-bold text-lg'>
+                        {product.discount.percentage}% OFF
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className='absolute top-4 right-4'>
                   <HeartIcon product={product} />
@@ -170,10 +218,35 @@ const ProductDetails = () => {
                       text={`${product.numReviews} reviews`}
                     />
                   </div>
+
+                  {/* Price display with discount if applicable */}
                   <div className='flex items-center mb-8'>
-                    <p className='text-4xl font-bold text-white'>
-                      ${product.price}
-                    </p>
+                    {hasDiscount ? (
+                      <div>
+                        <div className='flex items-center'>
+                          <p className='text-4xl font-bold text-green-400'>
+                            ${discountedPrice.toFixed(2)}
+                          </p>
+                          <p className='ml-3 text-xl text-gray-400 line-through'>
+                            ${product.price.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className='mt-2 flex items-center text-sm text-green-400'>
+                          <FaRegClock className='mr-1' />
+                          <span>
+                            Offer ends in{' '}
+                            {formatTimeRemaining(product.discount.endDate)}
+                            {product.discount.name &&
+                              ` • ${product.discount.name}`}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className='text-4xl font-bold text-white'>
+                        ${product.price.toFixed(2)}
+                      </p>
+                    )}
+
                     {product.quantity > 0 ? (
                       <span className='ml-4 px-3 py-1 bg-[rgba(211,190,249,0.15)] text-[rgb(211,190,249)] text-sm font-medium rounded-full'>
                         In Stock
@@ -184,6 +257,7 @@ const ProductDetails = () => {
                       </span>
                     )}
                   </div>
+
                   <p className='text-gray-300 mb-8 leading-relaxed'>
                     {product.description}
                   </p>

@@ -28,9 +28,36 @@ const productSchema = mongoose.Schema(
     rating: { type: Number, required: true, default: 0 },
     numReviews: { type: Number, required: true, default: 0 },
     price: { type: Number, required: true, default: 0 },
+    // New discount fields
+    discount: {
+      percentage: { type: Number, default: 0 },
+      active: { type: Boolean, default: false },
+      startDate: { type: Date },
+      endDate: { type: Date },
+      name: { type: String, default: '' }, // e.g., "Dashain Discount"
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 )
+
+// Add virtual for getting the discounted price
+productSchema.virtual('discountedPrice').get(function () {
+  if (
+    this.discount.active &&
+    this.discount.percentage > 0 &&
+    new Date() >= this.discount.startDate &&
+    new Date() <= this.discount.endDate
+  ) {
+    return this.price * (1 - this.discount.percentage / 100)
+  }
+  return this.price
+})
+
+// Ensure virtuals are included when converting to JSON
+productSchema.set('toJSON', { virtuals: true })
+productSchema.set('toObject', { virtuals: true })
 
 // Enforce consistent stock calculation
 productSchema.pre('save', function (next) {

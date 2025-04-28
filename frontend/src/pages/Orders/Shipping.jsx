@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux' 
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import {
@@ -7,11 +7,13 @@ import {
   useSavePaymentMethodMutation,
   useGetCartQuery,
 } from '../../redux/features/cart/cartApiSlice'
+import { setCart } from '../../redux/features/cart/cartSlice'
 import ProgressSteps from '../../components/ProgressSteps'
 
 const Shipping = () => {
   const { userInfo } = useSelector((state) => state.auth)
-  const { data: cartData, isLoading } = useGetCartQuery()
+  const dispatch = useDispatch()
+  const { data: cartData, isLoading, refetch } = useGetCartQuery()
 
   const [paymentMethod, setPaymentMethod] = useState('Esewa')
   const [address, setAddress] = useState('')
@@ -51,23 +53,30 @@ const Shipping = () => {
     e.preventDefault()
 
     try {
-      console.log('Saving shipping address...')
-      // Wait for shipping address save to complete
-      const shippingResult = await saveShippingAddress({
+      // Save shipping address
+      await saveShippingAddress({
         address,
         city,
         postalCode,
         country,
       }).unwrap()
-      console.log('Shipping address saved successfully:', shippingResult)
 
-      console.log('Saving payment method...')
-      // Wait for payment method save to complete
-      const paymentResult = await savePaymentMethod({ paymentMethod }).unwrap()
-      console.log('Payment method saved successfully:', paymentResult)
+      // Save payment method
+      await savePaymentMethod({ paymentMethod }).unwrap()
 
-      // Only navigate after both operations are successful
-      console.log('Redirecting to place order page...')
+      // Force a refetch
+      const refreshedData = await refetch().unwrap()
+
+      // Explicitly update cart state with the latest data from backend
+      dispatch(
+        setCart({
+          ...refreshedData,
+          shippingAddress: { address, city, postalCode, country },
+          paymentMethod,
+        })
+      )
+
+      // Now navigate
       navigate('/placeorder', { replace: true })
     } catch (error) {
       console.error('Error during form submission:', error)
