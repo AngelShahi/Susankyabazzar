@@ -96,9 +96,6 @@ const verifyOtpHandler = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body
 
-  console.log(email)
-  console.log(password)
-
   const existingUser = await User.findOne({ email })
 
   if (existingUser) {
@@ -106,6 +103,14 @@ const loginUser = asyncHandler(async (req, res) => {
     if (!existingUser.isVerified) {
       res.status(400)
       throw new Error('Please verify your email before logging in.')
+    }
+
+    // Check if account is active
+    if (!existingUser.isActive) {
+      res.status(403)
+      throw new Error(
+        'Your account has been deactivated. Please contact support.'
+      )
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -123,12 +128,10 @@ const loginUser = asyncHandler(async (req, res) => {
         isAdmin: existingUser.isAdmin,
       })
     } else {
-      // Password mismatch
       res.status(401)
       throw new Error('Invalid password')
     }
   } else {
-    // User not found
     res.status(404)
     throw new Error('User not found')
   }
@@ -398,6 +401,16 @@ const updateUserById = asyncHandler(async (req, res) => {
     user.email = req.body.email || user.email
     user.isAdmin = Boolean(req.body.isAdmin)
 
+    // Handle isActive if provided
+    if (typeof req.body.isActive !== 'undefined') {
+      user.isActive = req.body.isActive
+    }
+
+    // Store deactivation reason if provided
+    if (req.body.deactivationReason) {
+      user.deactivationReason = req.body.deactivationReason
+    }
+
     const updatedUser = await user.save()
 
     res.json({
@@ -405,6 +418,7 @@ const updateUserById = asyncHandler(async (req, res) => {
       username: updatedUser.username,
       email: updatedUser.email,
       isAdmin: updatedUser.isAdmin,
+      isActive: updatedUser.isActive,
     })
   } else {
     res.status(404)
@@ -547,6 +561,36 @@ const resetPassword = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'Password reset successful' })
 })
 
+const notifyUserStatusChange = asyncHandler(async (req, res) => {
+  const { email, username, isActive, reason } = req.body
+
+  try {
+    const message = isActive
+      ? `
+        <h2>Account Reactivated</h2>
+        <p>Your account has been reactivated by the administrator.</p>
+        <p>You can now log in and use all features of the platform.</p>
+      `
+      : `
+        <h2>Account Deactivated</h2>
+        <p>Your account has been deactivated by the administrator.</p>
+        ${reason && `<p><strong>Reason:</strong> ${reason}</p>`}
+        <p>If you believe this was done in error, please contact support.</p>
+      `
+
+    await sendEmail({
+      email,
+      subject: isActive ? 'Account Reactivated' : 'Account Deactivated',
+      html: message,
+    })
+
+    res.status(200).json({ message: 'Notification sent successfully' })
+  } catch (error) {
+    res.status(500)
+    throw new Error('Email could not be sent')
+  }
+})
+
 export {
   loginUser,
   logoutCurrentUser,
@@ -563,4 +607,5 @@ export {
   forgotPassword,
   verifyResetOtp,
   resetPassword,
+  notifyUserStatusChange,
 }

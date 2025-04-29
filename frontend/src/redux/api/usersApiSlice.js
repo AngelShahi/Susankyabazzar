@@ -101,6 +101,14 @@ export const userApiSlice = apiSlice.injectEndpoints({
         body: data,
       }),
     }),
+    // In userApiSlice.js, add this mutation
+    notifyUserStatusChange: builder.mutation({
+      query: (data) => ({
+        url: `${USERS_URL}/notify-status-change`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
   }),
 })
 
@@ -119,4 +127,5 @@ export const {
   useResetPasswordMutation,
   useRequestProfileUpdateOtpMutation,
   useVerifyProfileUpdateOtpMutation,
+  useNotifyUserStatusChangeMutation,
 } = userApiSlice

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSelector, useDispatch } from 'react-redux' 
+import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import {
@@ -15,7 +15,7 @@ const Shipping = () => {
   const dispatch = useDispatch()
   const { data: cartData, isLoading, refetch } = useGetCartQuery()
 
-  const [paymentMethod, setPaymentMethod] = useState('Esewa')
+  const [paymentMethod, setPaymentMethod] = useState('CashOnDelivery')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
   const [postalCode, setPostalCode] = useState('')
@@ -222,30 +222,119 @@ const Shipping = () => {
                     >
                       Payment Method
                     </label>
-                    <div
-                      className='p-4 rounded'
-                      style={{
-                        backgroundColor: 'rgba(7, 10, 19, 0.7)',
-                        border: '1px solid rgba(211, 190, 249, 0.3)',
-                      }}
-                    >
-                      <label className='flex items-center cursor-pointer'>
-                        <input
-                          type='radio'
-                          className='h-5 w-5'
-                          style={{ accentColor: 'rgb(211, 190, 249)' }}
-                          name='paymentMethod'
-                          value='Esewa'
-                          checked={paymentMethod === 'Esewa'}
-                          onChange={(e) => setPaymentMethod(e.target.value)}
-                        />
-                        <span
-                          className='ml-3'
-                          style={{ color: 'rgba(255, 255, 255, 0.9)' }}
-                        >
-                          Esewa or Banking
-                        </span>
-                      </label>
+                    <div className='space-y-3'>
+                      <div
+                        className='p-4 rounded'
+                        style={{
+                          backgroundColor: 'rgba(7, 10, 19, 0.7)',
+                          border: '1px solid rgba(211, 190, 249, 0.3)',
+                        }}
+                      >
+                        <label className='flex items-center cursor-pointer'>
+                          <input
+                            type='radio'
+                            className='h-5 w-5'
+                            style={{ accentColor: 'rgb(211, 190, 249)' }}
+                            name='paymentMethod'
+                            value='CashOnDelivery'
+                            checked={paymentMethod === 'CashOnDelivery'}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                          />
+                          <span
+                            className='ml-3'
+                            style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                          >
+                            Cash on Delivery
+                          </span>
+                        </label>
+                      </div>
+
+                      <div
+                        className='p-4 rounded'
+                        style={{
+                          backgroundColor: 'rgba(7, 10, 19, 0.7)',
+                          border: '1px solid rgba(211, 190, 249, 0.3)',
+                        }}
+                      >
+                        <label className='flex items-center cursor-pointer'>
+                          <input
+                            type='radio'
+                            className='h-5 w-5'
+                            style={{ accentColor: 'rgb(211, 190, 249)' }}
+                            name='paymentMethod'
+                            value='QRPayment'
+                            checked={paymentMethod === 'QRPayment'}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                          />
+                          <span
+                            className='ml-3'
+                            style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                          >
+                            QR Code Payment
+                          </span>
+                        </label>
+                        {paymentMethod === 'QRPayment' && (
+                          <div className='mt-3 ml-8'>
+                            <p
+                              className='text-sm mb-2'
+                              style={{ color: 'rgba(255, 255, 255, 0.7)' }}
+                            >
+                              Scan this QR code to pay:
+                            </p>
+                            {/* Replace with your actual QR code image */}
+                            <div className='bg-white p-2 rounded inline-block'>
+                              <img
+                                src='/images/qr-code-placeholder.png'
+                                alt='QR Code'
+                                className='w-32 h-32'
+                              />
+                            </div>
+                            <p
+                              className='text-sm mt-2'
+                              style={{ color: 'rgba(255, 255, 255, 0.7)' }}
+                            >
+                              Amount: Rs.{' '}
+                              {cartData?.totalPrice?.toFixed(2) || '0.00'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div
+                        className='p-4 rounded'
+                        style={{
+                          backgroundColor: 'rgba(7, 10, 19, 0.7)',
+                          border: '1px solid rgba(211, 190, 249, 0.3)',
+                        }}
+                      >
+                        <label className='flex items-center cursor-pointer'>
+                          <input
+                            type='radio'
+                            className='h-5 w-5'
+                            style={{ accentColor: 'rgb(211, 190, 249)' }}
+                            name='paymentMethod'
+                            value='Khalti'
+                            checked={paymentMethod === 'Khalti'}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                          />
+                          <span
+                            className='ml-3'
+                            style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                          >
+                            Khalti Payment
+                          </span>
+                        </label>
+                        {paymentMethod === 'Khalti' && (
+                          <div className='mt-3 ml-8'>
+                            <p
+                              className='text-sm'
+                              style={{ color: 'rgba(255, 255, 255, 0.7)' }}
+                            >
+                              You'll be redirected to Khalti payment gateway
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 

@@ -255,7 +255,7 @@ const Navigation = () => {
         </Link>
 
         <Link
-          to='/admin/DiscountManager'
+          to='/admin/DiscountListPage'
           className='flex items-center p-3 px-4 rounded-lg hover:bg-gray-800 text-gray-200'
         >
           <AiOutlinePercentage
@@ -267,7 +267,7 @@ const Navigation = () => {
               sidebarExpanded ? 'opacity-100' : 'opacity-0 absolute'
             }`}
           >
-            Users
+            Discounts
           </span>
         </Link>
       </div>

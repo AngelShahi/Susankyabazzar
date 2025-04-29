@@ -3,16 +3,17 @@ import { apiSlice } from './apiSlice'
 
 export const productApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    // ======================================
+    // PRODUCT QUERIES
+    // ======================================
+
     getProducts: builder.query({
-      query: (params = {}) => {
-        const { keyword = '', pageNumber = 1 } = params
-        return {
-          url: `${PRODUCT_URL}`,
-          params: { keyword, pageNumber },
-        }
-      },
-      keepUnusedDataFor: 5,
+      query: ({ keyword = '', pageNumber = 1 } = {}) => ({
+        url: PRODUCT_URL,
+        params: { keyword, pageNumber },
+      }),
       providesTags: ['Products'],
+      keepUnusedDataFor: 5,
     }),
 
     getProductById: builder.query({
@@ -22,76 +23,17 @@ export const productApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
-    allProducts: builder.query({
-      query: () => `${PRODUCT_URL}/allproducts`,
-      providesTags: ['Products'],
-    }),
-
     getProductDetails: builder.query({
-      query: (productId) => ({
-        url: `${PRODUCT_URL}/${productId}`,
-      }),
-      keepUnusedDataFor: 5,
+      query: (productId) => `${PRODUCT_URL}/${productId}`,
       providesTags: (result, error, productId) => [
         { type: 'Product', id: productId },
       ],
+      keepUnusedDataFor: 5,
     }),
 
-    createProduct: builder.mutation({
-      query: (productData) => ({
-        url: `${PRODUCT_URL}`,
-        method: 'POST',
-        body: productData,
-      }),
-      invalidatesTags: ['Products', 'Product'],
-    }),
-
-    updateProduct: builder.mutation({
-      query: ({ productId, formData }) => ({
-        url: `${PRODUCT_URL}/${productId}`,
-        method: 'PUT',
-        body: formData,
-      }),
-      // Force a refresh of the product data after update
-      invalidatesTags: (result, error, { productId }) => [
-        { type: 'Product', id: productId },
-        'Products',
-      ],
-      // Add transformResponse to ensure quantity is properly handled
-      transformResponse: (response) => {
-        // Make sure quantity is returned as a number
-        if (response && response.quantity) {
-          response.quantity = Number(response.quantity)
-        }
-        return response
-      },
-    }),
-
-    uploadProductImage: builder.mutation({
-      query: (data) => ({
-        url: `${UPLOAD_URL}`,
-        method: 'POST',
-        body: data,
-      }),
-    }),
-
-    deleteProduct: builder.mutation({
-      query: (productId) => ({
-        url: `${PRODUCT_URL}/${productId}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Products'],
-    }),
-
-    createReview: builder.mutation({
-      query: (data) => ({
-        url: `${PRODUCT_URL}/${data.productId}/reviews`,
-        method: 'POST',
-        body: data,
-      }),
-      invalidatesTags: (result, error, { productId }) => [
-        { type: 'Product', id: productId },
-      ],
+    getAllProducts: builder.query({
+      query: () => `${PRODUCT_URL}/allproducts`,
+      providesTags: ['Products'],
     }),
 
     getTopProducts: builder.query({
@@ -115,8 +57,78 @@ export const productApiSlice = apiSlice.injectEndpoints({
       providesTags: ['Products'],
     }),
 
+    // ======================================
+    // PRODUCT MUTATIONS
+    // ======================================
+
+    createProduct: builder.mutation({
+      query: (productData) => ({
+        url: PRODUCT_URL,
+        method: 'POST',
+        body: productData,
+      }),
+      invalidatesTags: ['Products'],
+    }),
+
+    updateProduct: builder.mutation({
+      query: ({ productId, formData }) => ({
+        url: `${PRODUCT_URL}/${productId}`,
+        method: 'PUT',
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: 'Product', id: productId },
+        'Products',
+      ],
+      transformResponse: (response) => {
+        if (response?.quantity) {
+          response.quantity = Number(response.quantity)
+        }
+        return response
+      },
+    }),
+
+    deleteProduct: builder.mutation({
+      query: (productId) => ({
+        url: `${PRODUCT_URL}/${productId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Products'],
+    }),
+
+    // ======================================
+    // MEDIA UPLOAD
+    // ======================================
+
+    uploadProductImage: builder.mutation({
+      query: (data) => ({
+        url: UPLOAD_URL,
+        method: 'POST',
+        body: data,
+      }),
+    }),
+
+    // ======================================
+    // REVIEWS
+    // ======================================
+
+    createReview: builder.mutation({
+      query: ({ productId, ...reviewData }) => ({
+        url: `${PRODUCT_URL}/${productId}/reviews`,
+        method: 'POST',
+        body: reviewData,
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: 'Product', id: productId },
+      ],
+    }),
+
+    // ======================================
+    // DISCOUNT MANAGEMENT
+    // ======================================
+
     applyDiscount: builder.mutation({
-      query: ({ productId, discountData }) => ({
+      query: ({ productId, ...discountData }) => ({
         url: `${PRODUCT_URL}/${productId}/discount`,
         method: 'PUT',
         body: discountData,
@@ -147,7 +159,11 @@ export const productApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Products'],
     }),
 
-    allCategories: builder.query({
+    // ======================================
+    // CATEGORIES
+    // ======================================
+
+    getAllCategories: builder.query({
       query: () => '/api/category/categories',
       providesTags: ['Categories'],
     }),
@@ -155,20 +171,20 @@ export const productApiSlice = apiSlice.injectEndpoints({
 })
 
 export const {
-  useGetProductByIdQuery,
   useGetProductsQuery,
+  useGetProductByIdQuery,
   useGetProductDetailsQuery,
-  useAllProductsQuery,
+  useGetAllProductsQuery,
   useCreateProductMutation,
   useUpdateProductMutation,
   useDeleteProductMutation,
+  useUploadProductImageMutation,
   useCreateReviewMutation,
   useGetTopProductsQuery,
   useGetNewProductsQuery,
-  useUploadProductImageMutation,
   useGetFilteredProductsQuery,
   useApplyDiscountMutation,
   useRemoveDiscountMutation,
   useApplyBulkDiscountMutation,
-  useAllCategoriesQuery,
+  useGetAllCategoriesQuery,
 } = productApiSlice

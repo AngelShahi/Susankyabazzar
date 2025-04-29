@@ -1,40 +1,34 @@
 import mongoose from 'mongoose'
 const { ObjectId } = mongoose.Schema
 
+// ======================================
+// SCHEMA DEFINITIONS
+// ======================================
+
+/**
+ * Review Sub-Schema
+ * Defines the structure for product reviews
+ */
 const reviewSchema = mongoose.Schema(
   {
-    name: { type: String, required: true },
-    rating: { type: Number, required: true },
-    comment: { type: String, required: true },
+    name: {
+      type: String,
+      required: true,
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+    comment: {
+      type: String,
+      required: true,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: 'User',
-    },
-  },
-  { timestamps: true }
-)
-
-const productSchema = mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    image: { type: String, required: true },
-    brand: { type: String, required: true },
-    quantity: { type: Number, required: true }, // Main inventory field
-    stock: { type: Boolean, default: true },
-    category: { type: ObjectId, ref: 'Category', required: true },
-    description: { type: String, required: true },
-    reviews: [reviewSchema],
-    rating: { type: Number, required: true, default: 0 },
-    numReviews: { type: Number, required: true, default: 0 },
-    price: { type: Number, required: true, default: 0 },
-    // New discount fields
-    discount: {
-      percentage: { type: Number, default: 0 },
-      active: { type: Boolean, default: false },
-      startDate: { type: Date },
-      endDate: { type: Date },
-      name: { type: String, default: '' }, // e.g., "Dashain Discount"
     },
   },
   {
@@ -42,31 +36,147 @@ const productSchema = mongoose.Schema(
   }
 )
 
-// Add virtual for getting the discounted price
+/**
+ * Main Product Schema
+ * Defines the structure for products including inventory and discount information
+ */
+const productSchema = mongoose.Schema(
+  {
+    // Basic Product Information
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+    },
+    image: {
+      type: String,
+      required: true,
+    },
+    brand: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    category: {
+      type: ObjectId,
+      ref: 'Category',
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    // Inventory Management
+    quantity: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+    stock: {
+      type: Boolean,
+      default: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+
+    // Reviews and Ratings
+    reviews: [reviewSchema],
+    rating: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    numReviews: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+
+    // Discount Information
+    discount: {
+      percentage: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
+      },
+      active: {
+        type: Boolean,
+        default: false,
+      },
+      startDate: {
+        type: Date,
+      },
+      endDate: {
+        type: Date,
+      },
+      name: {
+        type: String,
+        default: '',
+        trim: true,
+      },
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+)
+
+// ======================================
+// VIRTUAL PROPERTIES
+// ======================================
+
+/**
+ * Virtual for calculating discounted price
+ * Returns the discounted price if discount is active and valid
+ * Otherwise returns the regular price
+ */
 productSchema.virtual('discountedPrice').get(function () {
-  if (
+  const now = new Date()
+  const isDiscountValid =
     this.discount.active &&
     this.discount.percentage > 0 &&
-    new Date() >= this.discount.startDate &&
-    new Date() <= this.discount.endDate
-  ) {
-    return this.price * (1 - this.discount.percentage / 100)
-  }
-  return this.price
+    this.discount.startDate &&
+    this.discount.endDate &&
+    now >= this.discount.startDate &&
+    now <= this.discount.endDate
+
+  return isDiscountValid
+    ? this.price * (1 - this.discount.percentage / 100)
+    : this.price
 })
 
-// Ensure virtuals are included when converting to JSON
-productSchema.set('toJSON', { virtuals: true })
-productSchema.set('toObject', { virtuals: true })
+// ======================================
+// MIDDLEWARE/HOOKS
+// ======================================
 
-// Enforce consistent stock calculation
+/**
+ * Pre-save hook to automatically update stock status
+ * based on quantity changes
+ */
 productSchema.pre('save', function (next) {
-  // If quantity is 0 or less, set stock to false, otherwise true
   if (this.isModified('quantity')) {
     this.stock = this.quantity > 0
   }
   next()
 })
+
+// ======================================
+// MODEL EXPORT
+// ======================================
 
 const Product = mongoose.model('Product', productSchema)
 export default Product

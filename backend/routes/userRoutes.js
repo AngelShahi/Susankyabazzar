@@ -1,12 +1,10 @@
-// Updates to userRoutes.js - focusing on profile update routes
-
 import express from 'express'
 import {
   loginUser,
   logoutCurrentUser,
   getAllUsers,
   getCurrentUserProfile,
-  updateUserProfile, // Renamed from getCurrentUserProfile to be clearer
+  updateUserProfile,
   deleteUserById,
   getUserById,
   updateUserById,
@@ -17,6 +15,7 @@ import {
   resetPassword,
   requestProfileUpdateOtp,
   verifyProfileUpdateOtp,
+  notifyUserStatusChange,
 } from '../controllers/userController.js'
 
 import { authenticate, authorizeAdmin } from '../middlewares/authMiddleware.js'
@@ -42,7 +41,7 @@ router.post('/reset-password', resetPassword)
 router
   .route('/profile')
   .get(authenticate, getCurrentUserProfile)
-  .put(authenticate, updateUserProfile) // Add PUT to update profile
+  .put(authenticate, updateUserProfile)
 
 // Profile update OTP routes - require authentication
 router.post(
@@ -51,6 +50,14 @@ router.post(
   requestProfileUpdateOtp
 )
 router.post('/verify-profile-update-otp', authenticate, verifyProfileUpdateOtp)
+
+// Status change notification route
+router.post(
+  '/notify-status-change',
+  authenticate,
+  authorizeAdmin,
+  notifyUserStatusChange
+)
 
 // ADMIN ROUTES 👇
 router

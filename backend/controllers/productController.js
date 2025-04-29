@@ -2,6 +2,10 @@
 import asyncHandler from '../middlewares/asyncHandler.js'
 import Product from '../models/productModel.js'
 
+// ======================================
+// UTILITY FUNCTIONS
+// ======================================
+
 /**
  * Validates product fields.
  * If creating a new product (isUpdate = false), all fields are required.
@@ -29,27 +33,26 @@ const validateProductFields = (fields, isUpdate = false) => {
   return null
 }
 
+// ======================================
+// PRODUCT CONTROLLERS
+// ======================================
+
 /**
  * @desc    Create a new product
  * @route   POST /api/products
  * @access  Private/Admin
  */
 const addProduct = asyncHandler(async (req, res) => {
-  try {
-    const validationError = validateProductFields(req.fields)
-    if (validationError) {
-      return res.status(400).json({ error: validationError })
-    }
-
-    // Automatically sets stock based on quantity via pre-save middleware
-    const product = new Product({ ...req.fields })
-
-    await product.save()
-    res.status(201).json(product)
-  } catch (error) {
-    console.error(error)
-    res.status(400).json({ error: error.message })
+  const validationError = validateProductFields(req.fields)
+  if (validationError) {
+    return res.status(400).json({ error: validationError })
   }
+
+  // Automatically sets stock based on quantity via pre-save middleware
+  const product = new Product({ ...req.fields })
+  await product.save()
+
+  res.status(201).json(product)
 })
 
 /**
@@ -58,59 +61,31 @@ const addProduct = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const updateProductDetails = asyncHandler(async (req, res) => {
-  try {
-    console.log('Received update request for product:', req.params.id)
-    console.log('Raw incoming fields:', JSON.stringify(req.fields))
-
-    const existingProduct = await Product.findById(req.params.id)
-    if (!existingProduct) {
-      return res.status(404).json({ error: 'Product not found' })
-    }
-
-    const processedFields = { ...req.fields }
-
-    // Normalize quantity to a number and update stock status accordingly
-    if (processedFields.quantity !== undefined) {
-      const rawQuantity = processedFields.quantity
-      processedFields.quantity = parseInt(rawQuantity, 10)
-
-      console.log(
-        `Processing quantity: Original=${rawQuantity}, Parsed=${processedFields.quantity}`
-      )
-
-      if (isNaN(processedFields.quantity)) {
-        processedFields.quantity = 0
-      }
-
-      processedFields.stock = processedFields.quantity > 0
-    }
-
-    const validationError = validateProductFields(processedFields, true)
-    if (validationError) {
-      return res.status(400).json({ error: validationError })
-    }
-
-    console.log('Final fields to update:', JSON.stringify(processedFields))
-
-    // Update product in DB and return the updated document
-    const product = await Product.findByIdAndUpdate(
-      req.params.id,
-      { $set: processedFields },
-      { new: true, runValidators: true }
-    )
-
-    console.log('Updated product:', {
-      id: product._id,
-      name: product.name,
-      quantity: product.quantity,
-      stock: product.stock,
-    })
-
-    res.json(product)
-  } catch (error) {
-    console.error(error)
-    res.status(400).json({ error: error.message })
+  const existingProduct = await Product.findById(req.params.id)
+  if (!existingProduct) {
+    return res.status(404).json({ error: 'Product not found' })
   }
+
+  const processedFields = { ...req.fields }
+
+  // Normalize quantity to a number and update stock status
+  if (processedFields.quantity !== undefined) {
+    processedFields.quantity = parseInt(processedFields.quantity, 10) || 0
+    processedFields.stock = processedFields.quantity > 0
+  }
+
+  const validationError = validateProductFields(processedFields, true)
+  if (validationError) {
+    return res.status(400).json({ error: validationError })
+  }
+
+  const product = await Product.findByIdAndUpdate(
+    req.params.id,
+    { $set: processedFields },
+    { new: true, runValidators: true }
+  )
+
+  res.json(product)
 })
 
 /**
@@ -119,18 +94,13 @@ const updateProductDetails = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const removeProduct = asyncHandler(async (req, res) => {
-  try {
-    const product = await Product.findByIdAndDelete(req.params.id)
+  const product = await Product.findByIdAndDelete(req.params.id)
 
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' })
-    }
-
-    res.json(product)
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ error: 'Server error' })
+  if (!product) {
+    return res.status(404).json({ error: 'Product not found' })
   }
+
+  res.json(product)
 })
 
 /**
@@ -139,34 +109,24 @@ const removeProduct = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const fetchProducts = asyncHandler(async (req, res) => {
-  try {
-    const pageSize = 6
-    const page = Number(req.query.pageNumber) || 1
+  const pageSize = 6
+  const page = Number(req.query.pageNumber) || 1
 
-    const keyword = req.query.keyword
-      ? {
-          name: {
-            $regex: req.query.keyword,
-            $options: 'i',
-          },
-        }
-      : {}
+  const keyword = req.query.keyword
+    ? { name: { $regex: req.query.keyword, $options: 'i' } }
+    : {}
 
-    const count = await Product.countDocuments({ ...keyword })
-    const products = await Product.find({ ...keyword })
-      .limit(pageSize)
-      .skip(pageSize * (page - 1))
+  const count = await Product.countDocuments({ ...keyword })
+  const products = await Product.find({ ...keyword })
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
 
-    res.json({
-      products,
-      page,
-      pages: Math.ceil(count / pageSize),
-      hasMore: page * pageSize < count,
-    })
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ error: 'Server Error' })
-  }
+  res.json({
+    products,
+    page,
+    pages: Math.ceil(count / pageSize),
+    hasMore: page * pageSize < count,
+  })
 })
 
 /**
@@ -175,17 +135,11 @@ const fetchProducts = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const fetchProductById = asyncHandler(async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id)
-    if (product) {
-      return res.json(product)
-    } else {
-      res.status(404).json({ error: 'Product not found' })
-    }
-  } catch (error) {
-    console.error(error)
-    res.status(404).json({ error: 'Product not found' })
+  const product = await Product.findById(req.params.id)
+  if (!product) {
+    return res.status(404).json({ error: 'Product not found' })
   }
+  res.json(product)
 })
 
 /**
@@ -194,17 +148,12 @@ const fetchProductById = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const fetchAllProducts = asyncHandler(async (req, res) => {
-  try {
-    const products = await Product.find({})
-      .populate('category')
-      .limit(12)
-      .sort({ createdAt: -1 })
+  const products = await Product.find({})
+    .populate('category')
+    .limit(12)
+    .sort({ createdAt: -1 })
 
-    res.json(products)
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ error: 'Server Error' })
-  }
+  res.json(products)
 })
 
 /**
@@ -213,43 +162,38 @@ const fetchAllProducts = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const addProductReview = asyncHandler(async (req, res) => {
-  try {
-    const { rating, comment } = req.body
-    const product = await Product.findById(req.params.id)
+  const { rating, comment } = req.body
+  const product = await Product.findById(req.params.id)
 
-    if (product) {
-      const alreadyReviewed = product.reviews.find(
-        (r) => r.user.toString() === req.user._id.toString()
-      )
-
-      if (alreadyReviewed) {
-        return res
-          .status(400)
-          .json({ error: 'You have already reviewed this product' })
-      }
-
-      const review = {
-        name: req.user.username,
-        rating: Number(rating),
-        comment,
-        user: req.user._id,
-      }
-
-      product.reviews.push(review)
-      product.numReviews = product.reviews.length
-      product.rating =
-        product.reviews.reduce((acc, item) => item.rating + acc, 0) /
-        product.reviews.length
-
-      await product.save()
-      res.status(201).json({ message: 'Review added' })
-    } else {
-      res.status(404).json({ error: 'Product not found' })
-    }
-  } catch (error) {
-    console.error(error)
-    res.status(400).json({ error: error.message })
+  if (!product) {
+    return res.status(404).json({ error: 'Product not found' })
   }
+
+  const alreadyReviewed = product.reviews.find(
+    (r) => r.user.toString() === req.user._id.toString()
+  )
+
+  if (alreadyReviewed) {
+    return res
+      .status(400)
+      .json({ error: 'You have already reviewed this product' })
+  }
+
+  const review = {
+    name: req.user.username,
+    rating: Number(rating),
+    comment,
+    user: req.user._id,
+  }
+
+  product.reviews.push(review)
+  product.numReviews = product.reviews.length
+  product.rating =
+    product.reviews.reduce((acc, item) => item.rating + acc, 0) /
+    product.reviews.length
+
+  await product.save()
+  res.status(201).json({ message: 'Review added' })
 })
 
 /**
@@ -258,13 +202,8 @@ const addProductReview = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const fetchTopProducts = asyncHandler(async (req, res) => {
-  try {
-    const products = await Product.find({}).sort({ rating: -1 }).limit(4)
-    res.json(products)
-  } catch (error) {
-    console.error(error)
-    res.status(400).json({ error: error.message })
-  }
+  const products = await Product.find({}).sort({ rating: -1 }).limit(4)
+  res.json(products)
 })
 
 /**
@@ -273,13 +212,8 @@ const fetchTopProducts = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const fetchNewProducts = asyncHandler(async (req, res) => {
-  try {
-    const products = await Product.find().sort({ createdAt: -1 }).limit(5)
-    res.json(products)
-  } catch (error) {
-    console.error(error)
-    res.status(400).json({ error: error.message })
-  }
+  const products = await Product.find().sort({ createdAt: -1 }).limit(5)
+  res.json(products)
 })
 
 /**
@@ -288,21 +222,19 @@ const fetchNewProducts = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const filterProducts = asyncHandler(async (req, res) => {
-  try {
-    const { checked, radio } = req.body
+  const { checked, radio } = req.body
 
-    let args = {}
-    if (checked && checked.length > 0) args.category = checked
-    if (radio && radio.length >= 2)
-      args.price = { $gte: radio[0], $lte: radio[1] }
+  let args = {}
+  if (checked?.length > 0) args.category = checked
+  if (radio?.length >= 2) args.price = { $gte: radio[0], $lte: radio[1] }
 
-    const products = await Product.find(args)
-    res.json(products)
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ error: 'Server Error' })
-  }
+  const products = await Product.find(args)
+  res.json(products)
 })
+
+// ======================================
+// DISCOUNT CONTROLLERS
+// ======================================
 
 /**
  * @desc    Apply discount to a product
@@ -310,43 +242,33 @@ const filterProducts = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const applyProductDiscount = asyncHandler(async (req, res) => {
-  try {
-    const { percentage, startDate, endDate, name } = req.body
+  const { percentage, startDate, endDate, name } = req.body
 
-    if (!percentage || percentage < 0 || percentage > 100) {
-      return res
-        .status(400)
-        .json({ error: 'Valid discount percentage (0-100) is required' })
-    }
-
-    if (!startDate || !endDate) {
-      return res.status(400).json({ error: 'Start and end dates are required' })
-    }
-
-    const product = await Product.findById(req.params.id)
-
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' })
-    }
-
-    product.discount = {
-      percentage: Number(percentage),
-      active: true,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
-      name: name || 'Special Offer',
-    }
-
-    await product.save()
-
-    res.json({
-      message: 'Discount applied successfully',
-      product,
-    })
-  } catch (error) {
-    console.error(error)
-    res.status(400).json({ error: error.message })
+  if (!percentage || percentage < 0 || percentage > 100) {
+    return res
+      .status(400)
+      .json({ error: 'Valid discount percentage (0-100) is required' })
   }
+
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'Start and end dates are required' })
+  }
+
+  const product = await Product.findById(req.params.id)
+  if (!product) {
+    return res.status(404).json({ error: 'Product not found' })
+  }
+
+  product.discount = {
+    percentage: Number(percentage),
+    active: true,
+    startDate: new Date(startDate),
+    endDate: new Date(endDate),
+    name: name || 'Special Offer',
+  }
+
+  await product.save()
+  res.json({ message: 'Discount applied successfully', product })
 })
 
 /**
@@ -355,31 +277,21 @@ const applyProductDiscount = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const removeProductDiscount = asyncHandler(async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id)
-
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' })
-    }
-
-    product.discount = {
-      percentage: 0,
-      active: false,
-      startDate: null,
-      endDate: null,
-      name: '',
-    }
-
-    await product.save()
-
-    res.json({
-      message: 'Discount removed successfully',
-      product,
-    })
-  } catch (error) {
-    console.error(error)
-    res.status(400).json({ error: error.message })
+  const product = await Product.findById(req.params.id)
+  if (!product) {
+    return res.status(404).json({ error: 'Product not found' })
   }
+
+  product.discount = {
+    percentage: 0,
+    active: false,
+    startDate: null,
+    endDate: null,
+    name: '',
+  }
+
+  await product.save()
+  res.json({ message: 'Discount removed successfully', product })
 })
 
 /**
@@ -388,71 +300,62 @@ const removeProductDiscount = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const applyBulkDiscount = asyncHandler(async (req, res) => {
-  try {
-    const {
-      productIds,
-      percentage,
-      startDate,
-      endDate,
-      name,
-      categoryIds,
-      brandNames,
-    } = req.body
+  const {
+    productIds,
+    percentage,
+    startDate,
+    endDate,
+    name,
+    categoryIds,
+    brandNames,
+  } = req.body
 
-    if (!percentage || percentage < 0 || percentage > 100) {
-      return res
-        .status(400)
-        .json({ error: 'Valid discount percentage (0-100) is required' })
-    }
-
-    if (!startDate || !endDate) {
-      return res.status(400).json({ error: 'Start and end dates are required' })
-    }
-
-    let query = {}
-
-    // Apply to specific products if provided
-    if (productIds && productIds.length > 0) {
-      query._id = { $in: productIds }
-    }
-    // Apply to specific categories if provided
-    else if (categoryIds && categoryIds.length > 0) {
-      query.category = { $in: categoryIds }
-    }
-    // Apply to specific brands if provided
-    else if (brandNames && brandNames.length > 0) {
-      query.brand = { $in: brandNames }
-    }
-    // No filter means no update
-    else {
-      return res.status(400).json({
-        error:
-          'Please specify products, categories, or brands to apply discount',
-      })
-    }
-
-    const discountData = {
-      'discount.percentage': Number(percentage),
-      'discount.active': true,
-      'discount.startDate': new Date(startDate),
-      'discount.endDate': new Date(endDate),
-      'discount.name': name || 'Special Offer',
-    }
-
-    const result = await Product.updateMany(query, { $set: discountData })
-
-    res.json({
-      message: `Discount applied to ${result.modifiedCount} products`,
-      modifiedCount: result.modifiedCount,
-    })
-  } catch (error) {
-    console.error(error)
-    res.status(400).json({ error: error.message })
+  if (!percentage || percentage < 0 || percentage > 100) {
+    return res
+      .status(400)
+      .json({ error: 'Valid discount percentage (0-100) is required' })
   }
+
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'Start and end dates are required' })
+  }
+
+  let query = {}
+
+  // Build query based on provided filters
+  if (productIds?.length > 0) {
+    query._id = { $in: productIds }
+  } else if (categoryIds?.length > 0) {
+    query.category = { $in: categoryIds }
+  } else if (brandNames?.length > 0) {
+    query.brand = { $in: brandNames }
+  } else {
+    return res.status(400).json({
+      error: 'Please specify products, categories, or brands to apply discount',
+    })
+  }
+
+  const discountData = {
+    'discount.percentage': Number(percentage),
+    'discount.active': true,
+    'discount.startDate': new Date(startDate),
+    'discount.endDate': new Date(endDate),
+    'discount.name': name || 'Special Offer',
+  }
+
+  const result = await Product.updateMany(query, { $set: discountData })
+  res.json({
+    message: `Discount applied to ${result.modifiedCount} products`,
+    modifiedCount: result.modifiedCount,
+  })
 })
 
-// Exporting all controller functions
+// ======================================
+// EXPORT ALL CONTROLLERS
+// ======================================
+
 export {
+  // Product controllers
   addProduct,
   updateProductDetails,
   removeProduct,
@@ -463,6 +366,8 @@ export {
   fetchTopProducts,
   fetchNewProducts,
   filterProducts,
+
+  // Discount controllers
   applyProductDiscount,
   removeProductDiscount,
   applyBulkDiscount,

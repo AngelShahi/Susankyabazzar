@@ -7,8 +7,10 @@ const userSchema = mongoose.Schema(
     password: { type: String, required: true },
     isAdmin: { type: Boolean, default: false },
     isVerified: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true }, 
     verificationCode: String,
     verificationCodeExpiry: Date,
+    deactivationReason: String, 
   },
   { timestamps: true }
 )

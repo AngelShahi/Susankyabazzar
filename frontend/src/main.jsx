@@ -22,7 +22,9 @@ import CategoryList from './pages/Admin/CategoryList'
 import ProductList from './pages/Admin/ProductList'
 import AllProducts from './pages/Admin/AllProducts'
 import ProductUpdate from './pages/Admin/ProductUpdate'
-import DiscountManager from './pages/Admin/DiscountManager.jsx'
+import UpdateDiscountPage from './pages/Admin/UpdateDiscountPage.jsx'
+import DiscountListPage from './pages/Admin/DiscountListPage.jsx'
+import CreateDiscountPage from './pages/Admin/CreateDiscountPage.jsx'
 
 import Home from './pages/Home.jsx'
 import Favorites from './pages/Products/Favorites.jsx'
@@ -67,7 +69,12 @@ const router = createBrowserRouter(
         <Route path='productlist/:pageNumber' element={<ProductList />} />
         <Route path='product/update/:_id' element={<ProductUpdate />} />
         <Route path='orderlist' element={<OrderList />} />
-        <Route path='discountManager' element={<DiscountManager />} />
+        <Route
+          path='updatediscountpage/:productId'
+          element={<UpdateDiscountPage />}
+        />
+        <Route path='discountlistpage' element={<DiscountListPage />} />
+        <Route path='creatediscountpage' element={<CreateDiscountPage />} />
         <Route path='dashboard' element={<AdminDashboard />} />
       </Route>
     </Route>

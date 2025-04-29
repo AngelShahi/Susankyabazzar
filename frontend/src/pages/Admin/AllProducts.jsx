@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useAllProductsQuery } from '../../redux/api/productApiSlice'
+import { useGetAllProductsQuery } from '../../redux/api/productApiSlice'
 import { FaTag } from 'react-icons/fa'
 
 const AllProducts = () => {
-  const { data: products, isLoading, isError, refetch } = useAllProductsQuery()
+  const { data: products, isLoading, isError, refetch } = useGetAllProductsQuery()
   const [filteredProducts, setFilteredProducts] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All Categories')
