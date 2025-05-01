@@ -1,50 +1,31 @@
-const mongoose = require("mongoose");
+import mongoose from 'mongoose';
 
 const paymentSchema = new mongoose.Schema(
   {
-    transactionId: { 
-      type: String, 
-      unique: true 
+    transactionId: { type: String, unique: true },
+    pidx: { type: String, unique: true },
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'PurchasedItem',
+      required: true,
     },
-    pidx: { 
-      type: String, 
-      unique: true 
+    amount: { type: Number, required: true },
+    dataFromVerificationReq: { type: Object },
+    apiQueryFromUser: { type: Object },
+    paymentGateway: {
+      type: String,
+      enum: ['khalti', 'esewa', 'connectIps'],
+      required: true,
     },
-    productId: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "PurchasedItem", 
-      required: true, 
+    status: {
+      type: String,
+      enum: ['success', 'pending', 'failed'],
+      default: 'pending',
     },
-    amount: { 
-      type: Number, 
-      required: true 
-    },
-    dataFromVerificationReq: { 
-      type: Object 
-    },
-    apiQueryFromUser: { 
-      type: Object 
-    },
-    paymentGateway: { 
-      type: String, 
-      enum: ["khalti", "esewa", "connectIps"], 
-      required: true, 
-    },
-    status: { 
-      type: String, 
-      enum: ["success", "pending", "failed"], 
-      default: "pending", 
-    },
-    paymentDate: { 
-      type: Date, 
-      default: Date.now 
-    },
+    paymentDate: { type: Date, default: Date.now },
   },
-  { 
-    timestamps: true 
-  }
+  { timestamps: true }
 );
 
-const Payment = mongoose.model("payment", paymentSchema);
-
-module.exports = Payment;
+const Payment = mongoose.model('payment', paymentSchema);
+export default Payment;

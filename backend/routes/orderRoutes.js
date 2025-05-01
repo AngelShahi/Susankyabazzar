@@ -29,7 +29,7 @@ router.route('/total-sales-by-date').get(calcualteTotalSalesByDate)
 router.route('/:id').get(authenticate, findOrderById)
 router.route('/:id/payment-proof').put(authenticate, uploadPaymentProof)
 router.route('/:id/pay').put(authenticate, markOrderAsPaid)
-router.route('/:id/cancel').put(authenticate, cancelOrder);
+router.route('/:id/cancel').put(authenticate, cancelOrder)
 router
   .route('/:id/deliver')
   .put(authenticate, authorizeAdmin, markOrderAsDelivered)

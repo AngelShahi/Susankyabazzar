@@ -1,28 +1,7 @@
-const axios = require('axios')
-
-// Check environment variables on startup
-function checkEnvironmentVariables() {
-  const requiredVars = [
-    'KHALTI_SECRET_KEY',
-    'KHALTI_GATEWAY_URL',
-    'BACKEND_URI',
-  ]
-  const missing = requiredVars.filter((varName) => !process.env[varName])
-
-  if (missing.length > 0) {
-    console.error(
-      `Missing required environment variables: ${missing.join(', ')}`
-    )
-    throw new Error(
-      'Missing required environment variables for Khalti integration'
-    )
-  }
-}
+import axios from 'axios'
 
 // Function to verify Khalti Payment
-async function verifyKhaltiPayment(pidx) {
-  checkEnvironmentVariables()
-
+export async function verifyKhaltiPayment(pidx) {
   const headersList = {
     Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
     'Content-Type': 'application/json',
@@ -41,34 +20,13 @@ async function verifyKhaltiPayment(pidx) {
     const response = await axios.request(reqOptions)
     return response.data
   } catch (error) {
-    console.error(
-      'Error verifying Khalti payment:',
-      error.response?.data || error.message
-    )
-    throw new Error(
-      error.response?.data?.detail || 'Failed to verify payment with Khalti'
-    )
+    console.error('Error verifying Khalti payment:', error)
+    throw error
   }
 }
 
 // Function to initialize Khalti Payment
-async function initializeKhaltiPayment(details) {
-  checkEnvironmentVariables()
-
-  // Validate required fields
-  const requiredFields = [
-    'amount',
-    'purchase_order_id',
-    'purchase_order_name',
-    'return_url',
-  ]
-
-  for (const field of requiredFields) {
-    if (!details[field]) {
-      throw new Error(`Missing required field: ${field}`)
-    }
-  }
-
+export async function initializeKhaltiPayment(details) {
   const headersList = {
     Authorization: `Key ${process.env.KHALTI_SECRET_KEY}`,
     'Content-Type': 'application/json',
@@ -87,17 +45,7 @@ async function initializeKhaltiPayment(details) {
     const response = await axios.request(reqOptions)
     return response.data
   } catch (error) {
-    console.error(
-      'Error initializing Khalti payment:',
-      error.response?.data || error.message
-    )
-    throw new Error(
-      error.response?.data?.detail || 'Failed to initialize payment with Khalti'
-    )
+    console.error('Error initializing Khalti payment:', error)
+    throw error
   }
-}
-
-module.exports = {
-  verifyKhaltiPayment,
-  initializeKhaltiPayment,
 }
