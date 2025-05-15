@@ -13,10 +13,14 @@ import {
   markOrderAsDelivered,
   uploadPaymentProof,
   cancelOrder,
+  // Add new Khalti routes
+  initializeOrderKhaltiPayment,
+  verifyOrderKhaltiPayment,
 } from '../controllers/orderController.js'
 
 import { authenticate, authorizeAdmin } from '../middlewares/authMiddleware.js'
 
+// Existing routes
 router
   .route('/')
   .post(authenticate, createOrder)
@@ -33,5 +37,12 @@ router.route('/:id/cancel').put(authenticate, cancelOrder)
 router
   .route('/:id/deliver')
   .put(authenticate, authorizeAdmin, markOrderAsDelivered)
+
+// New Khalti routes
+router
+  .route('/:id/khalti/initialize')
+  .post(authenticate, initializeOrderKhaltiPayment)
+// The verification route is accessible without authentication as it's called by Khalti servers
+router.route('/khalti/verify').get(verifyOrderKhaltiPayment)
 
 export default router

@@ -19,6 +19,13 @@ const cartSchema = mongoose.Schema(
           required: true,
           ref: 'Product',
         },
+        discount: {
+          percentage: { type: Number, default: 0, min: 0, max: 100 },
+          active: { type: Boolean, default: false },
+          startDate: { type: Date },
+          endDate: { type: Date },
+          name: { type: String, default: '', trim: true },
+        },
       },
     ],
     shippingAddress: {

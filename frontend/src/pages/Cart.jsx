@@ -7,6 +7,7 @@ import {
   FaShoppingCart,
   FaPlus,
   FaMinus,
+  FaPercentage,
 } from 'react-icons/fa'
 import { toast } from 'react-toastify'
 import { setCart } from '../redux/features/cart/cartSlice'
@@ -38,17 +39,11 @@ const Cart = () => {
     }
   }, [data, dispatch])
 
-  const updateQuantityHandler = async (product, newQty) => {
+  const updateQuantityHandler = async (item, newQty) => {
     if (!userInfo) {
       navigate('/login')
       return
     }
-
-    console.log('Attempting to update quantity:', {
-      product: product.name,
-      currentQty: product.qty,
-      newQty: newQty,
-    })
 
     // Convert and validate quantity
     const quantity = Number(newQty)
@@ -58,22 +53,22 @@ const Cart = () => {
     }
 
     // Calculate maximum allowed quantity
-    // Ensure countInStock has a default value if it's undefined
-    const countInStock = product.countInStock || 20
+    const countInStock = item.countInStock || 20
     const maxQty = Math.min(countInStock, 20)
     const validatedQty = Math.min(quantity, maxQty)
 
     try {
-      // Only send the required information
       await addToCartApi({
-        name: product.name,
-        image: product.image,
-        price: product.price,
+        _id: item._id,
+        name: item.name,
+        image: item.image,
+        price: item.price,
         qty: validatedQty,
-        product: product.product, // This is the product ID
+        product: item.product,
+        discount: item.discount,
+        countInStock: item.countInStock,
       }).unwrap()
 
-      // Always refetch to ensure we have the latest data
       refetch()
       toast.success('Cart updated successfully')
     } catch (err) {
@@ -99,6 +94,32 @@ const Cart = () => {
       navigate('/shipping')
     }
   }
+
+  // Helper function to check if discount is active
+  const isDiscountActive = (discount) => {
+    if (!discount || !discount.active || !discount.endDate) return false
+    return new Date(discount.endDate) >= new Date()
+  }
+
+  // Helper function to calculate original price
+  const getOriginalPrice = (price, discount) => {
+    if (!isDiscountActive(discount)) return price
+    return price / (1 - discount.percentage / 100)
+  }
+
+  // Calculate total savings from discounts
+  const calculateTotalSavings = () => {
+    return cartItems.reduce((savings, item) => {
+      if (isDiscountActive(item.discount)) {
+        const originalPrice = getOriginalPrice(item.price, item.discount)
+        const savingsPerItem = (originalPrice - item.price) * item.qty
+        return savings + savingsPerItem
+      }
+      return savings
+    }, 0)
+  }
+
+  const totalSavings = calculateTotalSavings()
 
   if (isLoading) {
     return <Loader />
@@ -188,17 +209,14 @@ const Cart = () => {
                 }}
               >
                 {cartItems.map((item) => {
-                  // Ensure countInStock has a default value
                   const countInStock = item.countInStock || 20
                   const maxQty = Math.min(countInStock, 20)
-
-                  // Force recalculate these values to ensure they're correct
                   const canIncrease = Number(item.qty) < maxQty
                   const canDecrease = Number(item.qty) > 1
-
-                  console.log(
-                    `Item: ${item.name}, Qty: ${item.qty}, Max: ${maxQty}, Can increase: ${canIncrease}`
-                  )
+                  const hasDiscount = isDiscountActive(item.discount)
+                  const originalPrice = hasDiscount
+                    ? getOriginalPrice(item.price, item.discount).toFixed(2)
+                    : item.price.toFixed(2)
 
                   return (
                     <div
@@ -206,13 +224,19 @@ const Cart = () => {
                       className='flex flex-col sm:flex-row items-start sm:items-center p-6 border-b last:border-b-0'
                       style={{ borderColor: 'rgba(211, 190, 249, 0.2)' }}
                     >
-                      <div className='w-full sm:w-24 h-24 mb-4 sm:mb-0'>
+                      <div className='w-full sm:w-24 h-24 mb-4 sm:mb-0 relative'>
                         <img
                           src={item.image}
                           alt={item.name}
                           className='w-full h-full object-cover rounded-lg border'
                           style={{ borderColor: 'rgba(211, 190, 249, 0.3)' }}
                         />
+                        {hasDiscount && (
+                          <span className='absolute bottom-0 right-0 bg-green-600 text-white text-xs font-medium px-2 py-0.5 rounded-bl-lg rounded-tr-lg z-10 flex items-center'>
+                            <FaPercentage size={10} className='mr-1' />
+                            {item.discount.percentage}% OFF
+                          </span>
+                        )}
                       </div>
 
                       <div className='flex-1 sm:ml-6'>
@@ -229,11 +253,40 @@ const Cart = () => {
                         >
                           {item.brand}
                         </div>
-                        <div
-                          className='mt-2 text-xl font-bold'
-                          style={{ color: 'rgba(211, 190, 249, 0.9)' }}
-                        >
-                          ${item.price}
+                        <div className='mt-2'>
+                          {hasDiscount ? (
+                            <div className='flex flex-col'>
+                              <span
+                                className='text-xl font-bold'
+                                style={{ color: 'rgba(74, 222, 128, 0.9)' }}
+                              >
+                                ${item.price.toFixed(2)}
+                              </span>
+                              <span
+                                className='text-sm line-through'
+                                style={{ color: 'rgba(255, 255, 255, 0.5)' }}
+                              >
+                                ${originalPrice}
+                              </span>
+                              <span
+                                className='text-sm'
+                                style={{ color: 'rgba(74, 222, 128, 0.9)' }}
+                              >
+                                You save: $
+                                {(
+                                  (originalPrice - item.price) *
+                                  item.qty
+                                ).toFixed(2)}
+                              </span>
+                            </div>
+                          ) : (
+                            <span
+                              className='text-xl font-bold'
+                              style={{ color: 'rgba(211, 190, 249, 0.9)' }}
+                            >
+                              ${item.price.toFixed(2)}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -267,7 +320,6 @@ const Cart = () => {
                           >
                             {item.qty}
                           </span>
-                          {/* Fixed Plus Button */}
                           <button
                             onClick={() =>
                               updateQuantityHandler(item, Number(item.qty) + 1)
@@ -290,8 +342,6 @@ const Cart = () => {
                           >
                             <FaPlus />
                           </button>
-
-                          {/* Debug indicator to see if button is disabled */}
                           {!canIncrease && (
                             <div className='absolute right-0 top-0 text-xs text-red-500'>
                               (max)
@@ -361,6 +411,20 @@ const Cart = () => {
                     <span className='text-lg'>Subtotal:</span>
                     <span className='text-lg'>${cart.itemsPrice}</span>
                   </div>
+
+                  {totalSavings > 0 && (
+                    <div
+                      className='flex justify-between'
+                      style={{ color: 'rgba(74, 222, 128, 0.9)' }}
+                    >
+                      <span className='text-lg flex items-center'>
+                        <FaPercentage className='mr-1' /> Total Savings:
+                      </span>
+                      <span className='text-lg'>
+                        -${totalSavings.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
 
                   <div
                     className='flex justify-between'

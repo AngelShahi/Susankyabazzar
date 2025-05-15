@@ -29,7 +29,6 @@ const ProductCard = ({ p }) => {
     : null
 
   const addToCartHandler = async (product, qty) => {
-    // Check if product is out of stock
     if (product.quantity <= 0) {
       toast.error('This item is currently out of stock', {
         position: 'top-right',
@@ -39,7 +38,6 @@ const ProductCard = ({ p }) => {
     }
 
     if (!userInfo) {
-      // If user is not logged in, redirect to login
       navigate('/login')
       return
     }
@@ -50,17 +48,14 @@ const ProductCard = ({ p }) => {
         _id: product._id,
         name: product.name,
         image: product.image,
-        price: hasDiscount ? discountedPrice : product.price, // Use discounted price if available
+        price: hasDiscount ? discountedPrice : product.price,
         qty,
         product: product._id,
-        countInStock: product.quantity, // Using quantity as countInStock
-        discount: hasDiscount ? product.discount : null, // Pass discount info to cart
-      }).unwrap() // Use unwrap to properly handle the promise
+        countInStock: product.quantity,
+        discount: hasDiscount ? product.discount : null,
+      }).unwrap()
 
-      // Refetch the cart data
       const updatedCartData = await refetch().unwrap()
-
-      // Update the Redux store with the new cart data
       if (updatedCartData) {
         dispatch(setCart(updatedCartData))
       }

@@ -77,6 +77,15 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         body: { reason },
       }),
     }),
+
+    initializeKhaltiPayment: builder.mutation({
+      query: ({ orderId, website_url }) => ({
+        url: `/api/orders/${orderId}/khalti/initialize`,
+        method: 'POST',
+        body: { website_url },
+      }),
+      invalidatesTags: ['Order'],
+    }),
   }),
 })
 
@@ -93,4 +102,6 @@ export const {
   useGetOrdersQuery,
   useUploadPaymentProofMutation,
   useCancelOrderMutation,
+
+  useInitializeKhaltiPaymentMutation, // Export the new mutation
 } = orderApiSlice

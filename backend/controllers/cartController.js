@@ -1,6 +1,6 @@
-// controllers/cartController.js
 import asyncHandler from '../middlewares/asyncHandler.js'
 import Cart from '../models/cartModel.js'
+import Product from '../models/productModel.js'
 import { addDecimals } from '../utils/cartUtils.js'
 
 // Get cart for current user
@@ -24,18 +24,63 @@ const getCart = asyncHandler(async (req, res) => {
   res.status(200).json(cart)
 })
 
+// Add item to cart
 const addToCart = asyncHandler(async (req, res) => {
   try {
     const userId = req.user._id
-    const { _id, name, image, price, qty, product } = req.body
+    const { _id, name, image, price, qty, product, discount, countInStock } =
+      req.body
 
     console.log('Request body:', req.body)
 
     // Validate incoming data
-    if (!product || !name || price === undefined || qty === undefined) {
+    if (
+      !product ||
+      !name ||
+      price === undefined ||
+      qty === undefined ||
+      !countInStock
+    ) {
       return res
         .status(400)
         .json({ message: 'Missing required product information' })
+    }
+
+    // Validate quantity against stock
+    if (qty > countInStock) {
+      return res
+        .status(400)
+        .json({ message: `Only ${countInStock} items available in stock` })
+    }
+
+    // Fetch the product to validate price and discount
+    const productDoc = await Product.findById(product)
+    if (!productDoc) {
+      return res.status(404).json({ message: 'Product not found' })
+    }
+
+    // Calculate the correct price based on current discount status
+    const now = new Date()
+    const isDiscountValid =
+      discount &&
+      discount.active &&
+      discount.percentage > 0 &&
+      discount.startDate &&
+      discount.endDate &&
+      now >= new Date(discount.startDate) &&
+      now <= new Date(discount.endDate)
+
+    const expectedPrice = isDiscountValid
+      ? productDoc.price * (1 - discount.percentage / 100)
+      : productDoc.price
+
+    // Validate provided price
+    if (Math.abs(price - expectedPrice) > 0.01) {
+      return res
+        .status(400)
+        .json({
+          message: 'Provided price does not match current product price',
+        })
     }
 
     let cart = await Cart.findOne({ user: userId })
@@ -61,6 +106,8 @@ const addToCart = asyncHandler(async (req, res) => {
     if (itemIndex > -1) {
       // Update existing item
       cart.cartItems[itemIndex].qty = qty
+      cart.cartItems[itemIndex].price = price
+      cart.cartItems[itemIndex].discount = isDiscountValid ? discount : null
     } else {
       // Add new item
       const newItem = {
@@ -70,6 +117,7 @@ const addToCart = asyncHandler(async (req, res) => {
         price,
         qty,
         product,
+        discount: isDiscountValid ? discount : null,
       }
       cart.cartItems.push(newItem)
     }
@@ -103,6 +151,7 @@ const addToCart = asyncHandler(async (req, res) => {
     })
   }
 })
+
 // Remove item from cart
 const removeFromCart = asyncHandler(async (req, res) => {
   const userId = req.user._id

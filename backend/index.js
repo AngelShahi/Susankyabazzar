@@ -15,7 +15,6 @@ import uploadRoutes from './routes/uploadRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
 import favoriteRoutes from './routes/favoriteRoutes.js'
 import cartRoutes from './routes/cartRoutes.js'
-import paymentRoutes from './routes/paymentRoutes.js' // Added payment routes
 
 dotenv.config()
 const port = process.env.PORT || 5000
@@ -39,7 +38,6 @@ app.use('/api/upload', uploadRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/favorites', favoriteRoutes)
 app.use('/api/carts', cartRoutes)
-app.use('/api/payment', paymentRoutes) // Added payment routes
 
 // Static uploads folder
 const __dirname = path.resolve()
