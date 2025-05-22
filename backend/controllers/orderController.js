@@ -251,37 +251,43 @@ const markOrderAsPaid = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
 
-    if (order) {
-      if (!order.paymentProofImage) {
-        res.status(400)
-        throw new Error('Payment proof image is required')
-      }
-
-      for (const item of order.orderItems) {
-        const product = await Product.findById(item.product)
-        if (product) {
-          product.quantity = Math.max(0, product.quantity - item.qty)
-          await product.save()
-        }
-      }
-
-      order.isPaid = true
-      order.paidAt = Date.now()
-      order.paymentResult = {
-        id: req.body.id || Date.now().toString(),
-        status: 'COMPLETED',
-        update_time: new Date().toISOString(),
-        email_address: req.body.email_address || '',
-      }
-
-      const updateOrder = await order.save()
-      res.status(200).json(updateOrder)
-    } else {
+    if (!order) {
       res.status(404)
       throw new Error('Order not found')
     }
+
+    // Only require paymentProofImage for QRPayment
+    if (order.paymentMethod === 'QRPayment' && !order.paymentProofImage) {
+      res.status(400)
+      throw new Error('Payment proof image is required for QR Payment')
+    }
+
+    // Update product quantities
+    for (const item of order.orderItems) {
+      const product = await Product.findById(item.product)
+      if (product) {
+        product.quantity = Math.max(0, product.quantity - item.qty)
+        await product.save()
+      }
+    }
+
+    order.isPaid = true
+    order.paidAt = Date.now()
+    order.paymentResult = {
+      id: req.body.id || `PAY_${order.paymentMethod}_${Date.now()}`,
+      status: 'COMPLETED',
+      update_time: new Date().toISOString(),
+      email_address: req.body.email_address || order.user.email || '',
+    }
+
+    const updatedOrder = await order.save()
+    res.status(200).json(updatedOrder)
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    console.error('Error in markOrderAsPaid:', {
+      message: error.message,
+      stack: error.stack,
+    })
+    res.status(error.status || 500).json({ error: error.message })
   }
 }
 

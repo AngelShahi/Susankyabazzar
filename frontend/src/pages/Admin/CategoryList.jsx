@@ -10,15 +10,18 @@ import CategoryForm from '../../components/CategoryForm'
 import Modal from '../../components/Modal'
 
 const CategoryList = () => {
-  const { data: categories } = useFetchCategoriesQuery()
+  const { data: categories, isLoading, refetch } = useFetchCategoriesQuery()
   const [name, setName] = useState('')
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [updatingName, setUpdatingName] = useState('')
   const [modalVisible, setModalVisible] = useState(false)
 
-  const [createCategory] = useCreateCategoryMutation()
-  const [updateCategory] = useUpdateCategoryMutation()
-  const [deleteCategory] = useDeleteCategoryMutation()
+  const [createCategory, { isLoading: isCreating }] =
+    useCreateCategoryMutation()
+  const [updateCategory, { isLoading: isUpdating }] =
+    useUpdateCategoryMutation()
+  const [deleteCategory, { isLoading: isDeleting }] =
+    useDeleteCategoryMutation()
 
   const handleCreateCategory = async (e) => {
     e.preventDefault()
@@ -35,6 +38,8 @@ const CategoryList = () => {
       } else {
         setName('')
         toast.success(`${result.name} is created.`)
+        // Refetch categories to update the list immediately
+        refetch()
       }
     } catch (error) {
       console.error(error)
@@ -63,9 +68,12 @@ const CategoryList = () => {
         setSelectedCategory(null)
         setUpdatingName('')
         setModalVisible(false)
+        // Refetch categories to update the list immediately
+        refetch()
       }
     } catch (error) {
       console.error(error)
+      toast.error('Category update failed. Try again.')
     }
   }
 
@@ -79,6 +87,8 @@ const CategoryList = () => {
         toast.success(`${result.name} is deleted.`)
         setSelectedCategory(null)
         setModalVisible(false)
+        // Refetch categories to update the list immediately
+        refetch()
       }
     } catch (error) {
       console.error(error)
@@ -108,17 +118,27 @@ const CategoryList = () => {
                 value={name}
                 setValue={setName}
                 handleSubmit={handleCreateCategory}
-                buttonText='Create Category'
-                buttonClassName='w-full bg-[rgb(211,190,249)] hover:bg-[rgb(191,170,229)] text-gray-900 font-medium py-2 px-4 rounded-md transition-colors duration-200'
+                buttonText={isCreating ? 'Creating...' : 'Create Category'}
+                buttonClassName={`w-full font-medium py-2 px-4 rounded-md transition-colors duration-200 ${
+                  isCreating
+                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-[rgb(211,190,249)] hover:bg-[rgb(191,170,229)] text-gray-900'
+                }`}
+                disabled={isCreating}
               />
             </div>
           </div>
 
           <div className='lg:col-span-2'>
             <div className='bg-gray-900 bg-opacity-50 rounded-lg p-6 shadow-lg border border-gray-800'>
-              <h2 className='text-xl font-semibold mb-4 text-[rgb(211,190,249)]'>
-                Current Categories
-              </h2>
+              <div className='flex justify-between items-center mb-4'>
+                <h2 className='text-xl font-semibold text-[rgb(211,190,249)]'>
+                  Current Categories
+                </h2>
+                {isLoading && (
+                  <div className='text-sm text-gray-400'>Loading...</div>
+                )}
+              </div>
 
               {categories && categories.length > 0 ? (
                 <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
@@ -136,8 +156,9 @@ const CategoryList = () => {
                               setSelectedCategory(category)
                               setUpdatingName(category.name)
                             }}
-                            className='text-[rgb(211,190,249)] hover:text-white transition-colors'
+                            className='text-[rgb(211,190,249)] hover:text-white transition-colors text-sm font-medium'
                             title='Edit Category'
+                            disabled={isUpdating || isDeleting}
                           >
                             Edit
                           </button>
@@ -145,6 +166,10 @@ const CategoryList = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              ) : isLoading ? (
+                <div className='text-center py-8 text-gray-400'>
+                  Loading categories...
                 </div>
               ) : (
                 <div className='text-center py-8 text-gray-400'>
@@ -165,16 +190,26 @@ const CategoryList = () => {
             value={updatingName}
             setValue={(value) => setUpdatingName(value)}
             handleSubmit={handleUpdateCategory}
-            buttonText='Update'
-            buttonClassName='bg-[rgb(211,190,249)] hover:bg-[rgb(191,170,229)] text-gray-900 font-medium py-2 px-4 rounded-md transition-colors duration-200'
+            buttonText={isUpdating ? 'Updating...' : 'Update'}
+            buttonClassName={`font-medium py-2 px-4 rounded-md transition-colors duration-200 ${
+              isUpdating
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : 'bg-[rgb(211,190,249)] hover:bg-[rgb(191,170,229)] text-gray-900'
+            }`}
+            disabled={isUpdating}
           />
           {selectedCategory && (
             <div className='mt-4 pt-4 border-t border-gray-800'>
               <button
                 onClick={handleDeleteCategory}
-                className='flex items-center justify-center w-full mt-2 text-red-400 hover:text-white hover:bg-red-600 py-2 px-4 rounded-md transition-colors duration-200'
+                disabled={isDeleting || isUpdating}
+                className={`flex items-center justify-center w-full mt-2 py-2 px-4 rounded-md transition-colors duration-200 ${
+                  isDeleting || isUpdating
+                    ? 'text-gray-500 bg-gray-800 cursor-not-allowed'
+                    : 'text-red-400 hover:text-white hover:bg-red-600'
+                }`}
               >
-                Delete this category
+                {isDeleting ? 'Deleting...' : 'Delete this category'}
               </button>
             </div>
           )}

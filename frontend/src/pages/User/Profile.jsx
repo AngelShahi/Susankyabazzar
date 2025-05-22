@@ -567,12 +567,15 @@ const Profile = () => {
                 {isLoading ? 'Updating...' : 'Update Profile'}
               </button>
 
-              <Link
-                to='/orderhistory'
-                className='flex-1 py-3 px-6 rounded-lg font-bold border border-gray-600 text-gray-300 hover:bg-gray-800 transition-colors text-center'
-              >
-                My Orders
-              </Link>
+              {/* Conditionally render My Orders link for non-admin users */}
+              {!userInfo.isAdmin && (
+                <Link
+                  to='/orderhistory'
+                  className='flex-1 py-3 px-6 rounded-lg font-bold border border-gray-600 text-gray-300 hover:bg-gray-800 transition-colors text-center'
+                >
+                  My Orders
+                </Link>
+              )}
             </div>
           </form>
         </div>

@@ -27,12 +27,12 @@ const sendOtp = asyncHandler(async (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString()
   const expiry = Date.now() + 10 * 60 * 1000
 
-  // Save temporarily in memory (use Redis in production)
+  // Save temporarily in memory
   tempOtpStore[email] = {
     otp,
     expiry,
     username,
-    password, // store raw, hash later
+    password,
   }
 
   const message = `

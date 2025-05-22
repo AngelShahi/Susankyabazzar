@@ -158,7 +158,7 @@ const CreateDiscountPage = () => {
 
       await applyBulkDiscount(discountData).unwrap()
       toast.success('Discount created successfully')
-      navigate('/admin/discounts')
+      navigate('/admin/DiscountListPage')
     } catch (error) {
       console.error('Failed to create discount:', error)
       toast.error(error?.data?.error || 'Failed to create discount')
@@ -304,7 +304,7 @@ const CreateDiscountPage = () => {
     <div className='bg-[rgb(13,17,29)] rounded-xl shadow-lg p-8 max-w-6xl mx-auto my-10 border border-gray-800'>
       <div className='flex items-center mb-6'>
         <button
-          onClick={() => navigate('/admin/discounts')}
+          onClick={() => navigate('/admin/DiscountListPage')}
           className='mr-4 p-2 rounded-full hover:bg-gray-800 transition-colors'
         >
           <FaArrowLeft className='text-white' />

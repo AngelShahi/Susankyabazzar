@@ -36,9 +36,7 @@ const OrderHistoryScreen = () => {
 
     try {
       // Simulate file upload since we're not implementing the actual FileUpload component
-      // In a real app, you would call an API endpoint here
       setTimeout(() => {
-        // This is just a mock, in a real app you'd get this URL from your API response
         const fileUrl = URL.createObjectURL(file)
         setImage(fileUrl)
         setUploading(false)
@@ -113,7 +111,7 @@ const OrderHistoryScreen = () => {
     } else if (sortOrder === 'highest') {
       filtered.sort((a, b) => b.totalPrice - a.totalPrice)
     } else if (sortOrder === 'lowest') {
-      filtered.sort((a, b) => a.totalPrice - b.totalPrice)
+      filtered.sort((a, b) => a.totalPrice - a.totalPrice)
     }
 
     return filtered
@@ -170,6 +168,12 @@ const OrderHistoryScreen = () => {
         </span>
       )
     }
+  }
+
+  // Helper function to get product names from order items
+  const getProductNames = (order) => {
+    if (!order.orderItems || order.orderItems.length === 0) return 'No items'
+    return order.orderItems.map((item) => item.name).join(', ')
   }
 
   return (
@@ -294,6 +298,12 @@ const OrderHistoryScreen = () => {
                         className='px-4 py-3 text-left'
                         style={{ color: 'rgba(211, 190, 249, 0.9)' }}
                       >
+                        PRODUCTS
+                      </th>
+                      <th
+                        className='px-4 py-3 text-left'
+                        style={{ color: 'rgba(211, 190, 249, 0.9)' }}
+                      >
                         TOTAL
                       </th>
                       <th
@@ -333,6 +343,12 @@ const OrderHistoryScreen = () => {
                           style={{ color: 'rgba(255, 255, 255, 0.9)' }}
                         >
                           {order.createdAt.substring(0, 10)}
+                        </td>
+                        <td
+                          className='p-4'
+                          style={{ color: 'rgba(255, 255, 255, 0.9)' }}
+                        >
+                          {getProductNames(order)}
                         </td>
                         <td
                           className='p-4'
@@ -432,7 +448,7 @@ const OrderHistoryScreen = () => {
                 }}
                 className='text-gray-400 hover:text-white text-xl'
               >
-                &times;
+                ×
               </button>
             </div>
 
@@ -562,7 +578,7 @@ const OrderHistoryScreen = () => {
                 }}
                 className='text-gray-400 hover:text-white text-xl'
               >
-                &times;
+                ×
               </button>
             </div>
 

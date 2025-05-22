@@ -4,11 +4,18 @@ import { useGetAllProductsQuery } from '../../redux/api/productApiSlice'
 import { FaTag } from 'react-icons/fa'
 
 const AllProducts = () => {
-  const { data: products, isLoading, isError, refetch } = useGetAllProductsQuery()
+  const {
+    data: products,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetAllProductsQuery()
   const [filteredProducts, setFilteredProducts] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All Categories')
   const [showDiscountsOnly, setShowDiscountsOnly] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [productsPerPage] = useState(10) // You can make this configurable
 
   // Refetch data when component mounts
   useEffect(() => {
@@ -66,7 +73,60 @@ const AllProducts = () => {
     }
 
     setFilteredProducts(result)
+    // Reset to first page when filters change
+    setCurrentPage(1)
   }, [products, searchTerm, selectedCategory, showDiscountsOnly])
+
+  // Calculate pagination
+  const indexOfLastProduct = currentPage * productsPerPage
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage
+  const currentProducts = filteredProducts.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  )
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage)
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pageNumbers = []
+    const maxVisiblePages = 5
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i)
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pageNumbers.push(i)
+        }
+        pageNumbers.push('...')
+        pageNumbers.push(totalPages)
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(1)
+        pageNumbers.push('...')
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pageNumbers.push(i)
+        }
+      } else {
+        pageNumbers.push(1)
+        pageNumbers.push('...')
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pageNumbers.push(i)
+        }
+        pageNumbers.push('...')
+        pageNumbers.push(totalPages)
+      }
+    }
+
+    return pageNumbers
+  }
+
+  const handlePageChange = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber)
+    }
+  }
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -134,12 +194,19 @@ const AllProducts = () => {
     >
       <div className='container mx-auto px-6'>
         <div className='flex flex-col md:flex-row md:justify-between md:items-center mb-8'>
-          <h1 className='text-3xl font-bold mb-4 md:mb-0 text-white'>
-            Products
-          </h1>
-          <div className='flex gap-3'>
+          <div className='flex flex-col'>
+            <h1 className='text-3xl font-bold mb-2 text-white'>Products</h1>
+            {filteredProducts.length > 0 && (
+              <div className='text-sm text-gray-400'>
+                Showing {indexOfFirstProduct + 1}-
+                {Math.min(indexOfLastProduct, filteredProducts.length)} of{' '}
+                {filteredProducts.length} products
+              </div>
+            )}
+          </div>
+          <div className='flex gap-3 mt-4 md:mt-0'>
             <Link
-              to='/admin/discountmanager'
+              to='/admin/DiscountListPage'
               className='font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors duration-200 mr-2'
               style={{
                 backgroundColor: 'rgba(211, 190, 249, 0.2)',
@@ -305,7 +372,7 @@ const AllProducts = () => {
                     Category
                   </th>
                   <th
-                    className='py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider'
+                    className='py-4 px-6 text-left text-xs font-medium uppercase tracking-wider'
                     style={{ color: 'rgb(211, 190, 249)' }}
                   >
                     Price
@@ -343,12 +410,15 @@ const AllProducts = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredProducts.map((product, index) => {
-                  const hasDiscount = product.discount && product.discount.percentage > 0
+                {currentProducts.map((product, index) => {
+                  const hasDiscount =
+                    product.discount && product.discount.percentage > 0
                   const discountActive = isDiscountActive(product.discount)
                   const finalPrice = discountActive
                     ? calculateDiscountedPrice(product.price, product.discount)
                     : product.price
+                  // Calculate actual index based on current page
+                  const actualIndex = indexOfFirstProduct + index
 
                   return (
                     <tr
@@ -359,7 +429,7 @@ const AllProducts = () => {
                       }}
                     >
                       <td className='py-4 px-6 text-sm text-gray-400'>
-                        P{String(index + 1).padStart(3, '0')}
+                        P{String(actualIndex + 1).padStart(3, '0')}
                       </td>
                       <td className='py-4 px-6 text-sm font-medium text-white'>
                         {product.name || 'Unnamed Product'}
@@ -371,7 +441,9 @@ const AllProducts = () => {
                       </td>
                       <td
                         className={`py-4 px-6 text-sm font-medium ${
-                          hasDiscount && discountActive ? 'line-through text-gray-400' : ''
+                          hasDiscount && discountActive
+                            ? 'line-through text-gray-400'
+                            : ''
                         }`}
                         style={
                           !hasDiscount || !discountActive
@@ -401,7 +473,8 @@ const AllProducts = () => {
                               {product.discount.name || 'Discount'}
                             </div>
                             <div className='text-xs text-gray-400 mt-0.5'>
-                              {formatDate(product.discount.startDate)} - {formatDate(product.discount.endDate)}
+                              {formatDate(product.discount.startDate)} -{' '}
+                              {formatDate(product.discount.endDate)}
                             </div>
                           </div>
                         ) : (
@@ -448,6 +521,125 @@ const AllProducts = () => {
                 })}
               </tbody>
             </table>
+
+            {/* Pagination */}
+            {filteredProducts.length > 0 && totalPages > 1 && (
+              <div
+                className='px-4 py-3 border-t'
+                style={{
+                  backgroundColor: 'rgba(23, 27, 40, 0.9)',
+                  borderColor: 'rgba(211, 190, 249, 0.2)',
+                }}
+              >
+                <div className='flex items-center justify-between'>
+                  <div className='flex-1 flex justify-between sm:hidden'>
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className='relative inline-flex items-center px-4 py-2 border border-gray-600 text-sm font-medium rounded-md text-gray-300 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className='ml-3 relative inline-flex items-center px-4 py-2 border border-gray-600 text-sm font-medium rounded-md text-gray-300 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className='hidden sm:flex-1 sm:flex sm:items-center sm:justify-between'>
+                    <div>
+                      <p className='text-sm text-gray-400'>
+                        Showing{' '}
+                        <span className='font-medium'>
+                          {indexOfFirstProduct + 1}
+                        </span>{' '}
+                        to{' '}
+                        <span className='font-medium'>
+                          {Math.min(
+                            indexOfLastProduct,
+                            filteredProducts.length
+                          )}
+                        </span>{' '}
+                        of{' '}
+                        <span className='font-medium'>
+                          {filteredProducts.length}
+                        </span>{' '}
+                        results
+                      </p>
+                    </div>
+                    <div>
+                      <nav
+                        className='relative z-0 inline-flex rounded-md shadow-sm -space-x-px'
+                        aria-label='Pagination'
+                      >
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className='relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                        >
+                          <span className='sr-only'>Previous</span>
+                          <svg
+                            className='h-5 w-5'
+                            xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 20 20'
+                            fill='currentColor'
+                            aria-hidden='true'
+                          >
+                            <path
+                              fillRule='evenodd'
+                              d='M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z'
+                              clipRule='evenodd'
+                            />
+                          </svg>
+                        </button>
+
+                        {getPageNumbers().map((number, index) => (
+                          <button
+                            key={index}
+                            onClick={() =>
+                              number !== '...' && handlePageChange(number)
+                            }
+                            disabled={number === '...'}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              number === currentPage
+                                ? 'z-10 bg-[rgb(211,190,249)] border-[rgb(211,190,249)] text-gray-900'
+                                : number === '...'
+                                ? 'border-gray-600 bg-gray-800 text-gray-400 cursor-default'
+                                : 'border-gray-600 bg-gray-800 text-gray-400 hover:bg-gray-700'
+                            }`}
+                          >
+                            {number}
+                          </button>
+                        ))}
+
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className='relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-600 bg-gray-800 text-sm font-medium text-gray-400 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                        >
+                          <span className='sr-only'>Next</span>
+                          <svg
+                            className='h-5 w-5'
+                            xmlns='http://www.w3.org/2000/svg'
+                            viewBox='0 0 20 20'
+                            fill='currentColor'
+                            aria-hidden='true'
+                          >
+                            <path
+                              fillRule='evenodd'
+                              d='M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z'
+                              clipRule='evenodd'
+                            />
+                          </svg>
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

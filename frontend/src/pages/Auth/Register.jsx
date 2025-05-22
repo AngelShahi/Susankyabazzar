@@ -8,90 +8,102 @@ import {
 import { setCredentials } from '../../redux/features/auth/authSlice'
 import { toast } from 'react-toastify'
 
-// Custom loader component
+// Custom loader component for displaying a loading spinner
 const CustomLoader = () => (
   <div className='flex justify-center items-center'>
     <div className='animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-purple-300'></div>
   </div>
 )
 
+// Main Register component for handling user registration and OTP verification
 const Register = () => {
+  // State for form inputs and UI toggles
   const [username, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [otp, setOtp] = useState('')
-  const [showOtpInput, setShowOtpInput] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [showOtpInput, setShowOtpInput] = useState(false) // Toggle between registration and OTP verification form
+  const [showPassword, setShowPassword] = useState(false) // Toggle password visibility
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false) // Toggle confirm password visibility
 
+  // Redux hooks for dispatching actions and accessing state
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
+  // RTK Query hooks for registration and OTP verification API calls
   const [register, { isLoading }] = useRegisterMutation()
   const [verifyOtp, { isLoading: isVerifying }] = useVerifyOtpMutation()
 
+  // Access user info from Redux store
   const { userInfo } = useSelector((state) => state.auth)
 
+  // Get redirect URL from query parameters or default to home
   const { search } = useLocation()
   const sp = new URLSearchParams(search)
   const redirect = sp.get('redirect') || '/'
 
+  // Redirect authenticated users to the specified route
   useEffect(() => {
     if (userInfo) {
       navigate(redirect)
     }
   }, [navigate, redirect, userInfo])
 
+  // Handle registration form submission
   const submitHandler = async (e) => {
     e.preventDefault()
 
+    // Validate password match
     if (password !== confirmPassword) {
-      toast.error('Passwords do not match')
+      toast.error('Invalid credentials provided')
     } else {
       try {
+        // Attempt to register user
         await register({ username, email, password }).unwrap()
-        toast.success('User registered! Please verify your email.')
-        setShowOtpInput(true) // Show OTP input after successful registration
+        toast.success(
+          'Account creation initiated. Please verify your credentials.'
+        )
+        setShowOtpInput(true) // Show OTP input form
       } catch (err) {
         console.error(err)
-        toast.error(err?.data?.message || 'Registration failed')
+        toast.error(err?.data?.message || 'Account creation failed')
       }
     }
   }
 
+  // Handle OTP verification form submission
   const verifyOtpHandler = async (e) => {
     e.preventDefault()
     try {
+      // Verify OTP and get user data
       const response = await verifyOtp({ email, otp }).unwrap()
-      // Log the response to check structure
       console.log('OTP verification response:', response)
 
-      // If the user data is nested inside response.data
+      // Store user credentials in Redux
       dispatch(setCredentials(response))
-      toast.success('OTP verified! You are now logged in.')
+      toast.success('Credentials verified. Access granted.')
 
-      // Check if the registered user is an admin
+      // Prevent admin registration
       if (response.isAdmin) {
-        toast.error('Admin registration is not allowed here.')
+        toast.error('Unauthorized account type')
         return
       }
 
-      // If not admin, navigate normally
+      // Navigate to redirect URL or home
       if (redirect === '/') {
         navigate(redirect, { replace: true })
-        // Add window.location.reload() like in login component
-        window.location.reload()
+        window.location.reload() // Refresh to ensure state consistency
       } else {
         navigate(redirect)
       }
     } catch (err) {
       console.error(err)
-      toast.error(err?.data?.message || 'OTP verification failed')
+      toast.error(err?.data?.message || 'Verification failed')
     }
   }
 
-  // Custom styles that match the specific color scheme
+  // Define custom color scheme for consistent styling
   const styles = {
     backgroundColor: 'rgb(7, 10, 19)',
     accentColor: 'rgb(211, 190, 249)',
@@ -101,29 +113,33 @@ const Register = () => {
   }
 
   return (
+    // Main container with full-screen centering
     <div
       className='min-h-screen flex items-center justify-center p-4'
       style={{ backgroundColor: styles.backgroundColor }}
     >
+      {/* Form and image container */}
       <div
         className='w-full max-w-6xl flex rounded-xl shadow-2xl overflow-hidden'
         style={{ backgroundColor: styles.darkBg }}
       >
-        {/* Left Side - Form */}
+        {/* Left Side - Registration/OTP Form */}
         <div className='w-full lg:w-1/2 p-8 md:p-12'>
           <div className='mb-8'>
             <h1 className='text-3xl font-bold text-white mb-2'>
-              {showOtpInput ? 'Verify Your Email' : 'Create Account'}
+              {showOtpInput ? 'Verify Your Credentials' : 'Create Account'}
             </h1>
             <p className='text-gray-300'>
               {showOtpInput
-                ? `Enter the verification code sent to ${email}`
-                : 'Register to get started with our platform'}
+                ? `Enter the code sent to your registered contact`
+                : 'Sign up to access our platform'}
             </p>
           </div>
 
+          {/* Conditional rendering: Registration form or OTP verification form */}
           {!showOtpInput ? (
             <form onSubmit={submitHandler} className='space-y-6'>
+              {/* Username Input */}
               <div>
                 <label
                   htmlFor='username'
@@ -156,7 +172,7 @@ const Register = () => {
                       borderColor: 'rgba(211, 190, 249, 0.3)',
                       boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
                     }}
-                    placeholder='John Doe'
+                    placeholder='Enter your name'
                     value={username}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -164,12 +180,13 @@ const Register = () => {
                 </div>
               </div>
 
+              {/* Email Input */}
               <div>
                 <label
                   htmlFor='email'
                   className='block text-sm font-medium text-gray-300 mb-1'
                 >
-                  Email Address
+                  Contact Address
                 </label>
                 <div className='relative'>
                   <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
@@ -196,7 +213,7 @@ const Register = () => {
                       borderColor: 'rgba(211, 190, 249, 0.3)',
                       boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
                     }}
-                    placeholder='you@example.com'
+                    placeholder='Enter contact address'
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -204,12 +221,13 @@ const Register = () => {
                 </div>
               </div>
 
+              {/* Password Input with Visibility Toggle */}
               <div>
                 <label
                   htmlFor='password'
                   className='block text-sm font-medium text-gray-300 mb-1'
                 >
-                  Password
+                  Passcode
                 </label>
                 <div className='relative'>
                   <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
@@ -271,12 +289,13 @@ const Register = () => {
                 </div>
               </div>
 
+              {/* Confirm Password Input with Visibility Toggle */}
               <div>
                 <label
                   htmlFor='confirmPassword'
                   className='block text-sm font-medium text-gray-300 mb-1'
                 >
-                  Confirm Password
+                  Confirm Passcode
                 </label>
                 <div className='relative'>
                   <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
@@ -338,6 +357,7 @@ const Register = () => {
                 </div>
               </div>
 
+              {/* Submit Button for Registration */}
               <button
                 disabled={isLoading}
                 type='submit'
@@ -352,6 +372,7 @@ const Register = () => {
             </form>
           ) : (
             <form onSubmit={verifyOtpHandler} className='space-y-6'>
+              {/* OTP Input */}
               <div>
                 <label
                   htmlFor='otp'
@@ -392,6 +413,7 @@ const Register = () => {
                 </div>
               </div>
 
+              {/* Submit Button for OTP Verification */}
               <button
                 disabled={isVerifying}
                 type='submit'
@@ -401,14 +423,15 @@ const Register = () => {
                   boxShadow: '0 4px 6px rgba(0, 0, 0, 0.25)',
                 }}
               >
-                {isVerifying ? <CustomLoader /> : 'Verify & Login'}
+                {isVerifying ? <CustomLoader /> : 'Verify & Sign In'}
               </button>
             </form>
           )}
 
+          {/* Link to Login Page */}
           <div className='mt-8 text-center'>
             <p className='text-gray-300'>
-              Already have an account?{' '}
+              Already registered?{' '}
               <Link
                 to={redirect ? `/login?redirect=${redirect}` : '/login'}
                 className='font-medium hover:opacity-80 transition-opacity duration-200'
@@ -419,8 +442,7 @@ const Register = () => {
             </p>
           </div>
         </div>
-
-        {/* Right Side - Image */}
+        /* Right Side - Decorative Image Section (Visible on Large Screens) */
         <div className='hidden lg:block w-1/2 relative'>
           <div className='absolute inset-0 bg-gradient-to-r from-black to-transparent z-10 opacity-60'></div>
           <div className='absolute inset-0 flex items-center justify-center z-20'>
@@ -450,11 +472,11 @@ const Register = () => {
                 </svg>
               </div>
               <h2 className='text-2xl font-bold text-white mb-2'>
-                Join Our Community
+                Join Our Platform
               </h2>
               <p className='text-gray-300'>
-                Create your account to access exclusive features and connect
-                with our growing community.
+                Register to unlock exclusive features and connect with our
+                community.
               </p>
             </div>
           </div>

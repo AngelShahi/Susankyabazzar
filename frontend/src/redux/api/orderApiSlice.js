@@ -9,12 +9,14 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: order,
       }),
+      invalidatesTags: ['Orders'], // Invalidate orders list when a new order is created
     }),
 
     getOrderDetails: builder.query({
       query: (id) => ({
         url: `${ORDERS_URL}/${id}`,
       }),
+      providesTags: (result, error, id) => [{ type: 'Order', id }],
     }),
 
     payOrder: builder.mutation({
@@ -23,12 +25,14 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         method: 'PUT',
         body: details,
       }),
+      invalidatesTags: ['Orders', { type: 'Order', id: 'LIST' }], // Invalidate orders list and specific order
     }),
 
     getMyOrders: builder.query({
       query: () => ({
         url: `${ORDERS_URL}/mine`,
       }),
+      providesTags: ['Orders'],
       keepUnusedDataFor: 5,
     }),
 
@@ -36,6 +40,7 @@ export const orderApiSlice = apiSlice.injectEndpoints({
       query: () => ({
         url: ORDERS_URL,
       }),
+      providesTags: ['Orders'], // Tag the orders list
     }),
 
     deliverOrder: builder.mutation({
@@ -43,6 +48,7 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         url: `${ORDERS_URL}/${orderId}/deliver`,
         method: 'PUT',
       }),
+      invalidatesTags: ['Orders', { type: 'Order', id: 'LIST' }], // Invalidate orders list and specific order
     }),
 
     getTotalOrders: builder.query({
@@ -56,26 +62,29 @@ export const orderApiSlice = apiSlice.injectEndpoints({
     getTotalSalesByDate: builder.query({
       query: () => `${ORDERS_URL}/total-sales-by-date`,
     }),
-    // New mutation for uploading payment proof
+
     uploadPaymentProof: builder.mutation({
       query: ({ orderId, imageUrl }) => ({
         url: `${ORDERS_URL}/${orderId}/payment-proof`,
         method: 'PUT',
         body: { imageUrl },
       }),
+      invalidatesTags: ['Orders', { type: 'Order', id: 'LIST' }], // Invalidate orders list and specific order
     }),
+
     getPaymentStatus: builder.query({
       query: ({ orderId }) => ({
         url: `${ORDERS_URL}/${orderId}/pay`,
       }),
     }),
-    // Add this new mutation
+
     cancelOrder: builder.mutation({
       query: ({ orderId, reason }) => ({
         url: `${ORDERS_URL}/${orderId}/cancel`,
         method: 'PUT',
         body: { reason },
       }),
+      invalidatesTags: ['Orders', { type: 'Order', id: 'LIST' }], // Invalidate orders list and specific order
     }),
 
     initializeKhaltiPayment: builder.mutation({
@@ -84,7 +93,7 @@ export const orderApiSlice = apiSlice.injectEndpoints({
         method: 'POST',
         body: { website_url },
       }),
-      invalidatesTags: ['Order'],
+      invalidatesTags: ['Orders', { type: 'Order', id: 'LIST' }],
     }),
   }),
 })
@@ -93,7 +102,6 @@ export const {
   useGetTotalOrdersQuery,
   useGetTotalSalesQuery,
   useGetTotalSalesByDateQuery,
-  // ------------------
   useCreateOrderMutation,
   useGetOrderDetailsQuery,
   usePayOrderMutation,
@@ -102,6 +110,5 @@ export const {
   useGetOrdersQuery,
   useUploadPaymentProofMutation,
   useCancelOrderMutation,
-
-  useInitializeKhaltiPaymentMutation, // Export the new mutation
+  useInitializeKhaltiPaymentMutation,
 } = orderApiSlice

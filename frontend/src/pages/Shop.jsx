@@ -24,6 +24,8 @@ const Shop = () => {
 
   const categoriesQuery = useFetchCategoriesQuery()
   const [priceFilter, setPriceFilter] = useState('')
+  const [minPrice, setMinPrice] = useState('') // New state for minimum price
+  const [maxPrice, setMaxPrice] = useState('') // New state for maximum price
   const [searchTerm, setSearchTerm] = useState('')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
 
@@ -41,16 +43,21 @@ const Shop = () => {
   useEffect(() => {
     if (!checked.length || !radio.length) {
       if (!filteredProductsQuery.isLoading) {
-        // Filter products based on checked categories, price filter, and search term
+        // Filter products based on checked categories, price filter, price range, and search term
         const filteredProducts = filteredProductsQuery.data.filter(
           (product) => {
-            // Check if the product price includes the entered price filter value
-            const matchesPrice =
+            // Exact price filter
+            const matchesExactPrice =
               priceFilter === '' ||
               product.price.toString().includes(priceFilter) ||
               product.price === parseInt(priceFilter, 10)
 
-            // Check if product name or description matches search term
+            // Price range filter
+            const matchesPriceRange =
+              (minPrice === '' || product.price >= parseFloat(minPrice)) &&
+              (maxPrice === '' || product.price <= parseFloat(maxPrice))
+
+            // Search term filter
             const matchesSearch =
               searchTerm === '' ||
               product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -61,7 +68,7 @@ const Shop = () => {
               (product.brand &&
                 product.brand.toLowerCase().includes(searchTerm.toLowerCase()))
 
-            return matchesPrice && matchesSearch
+            return matchesExactPrice && matchesPriceRange && matchesSearch
           }
         )
 
@@ -74,6 +81,8 @@ const Shop = () => {
     filteredProductsQuery.data,
     dispatch,
     priceFilter,
+    minPrice,
+    maxPrice,
     searchTerm,
   ])
 
@@ -103,12 +112,24 @@ const Shop = () => {
   ]
 
   const handlePriceChange = (e) => {
-    // Update the price filter state when the user types in the input field
     setPriceFilter(e.target.value)
   }
 
+  const handleMinPriceChange = (e) => {
+    const value = e.target.value
+    if (value === '' || (!isNaN(value) && parseFloat(value) >= 0)) {
+      setMinPrice(value)
+    }
+  }
+
+  const handleMaxPriceChange = (e) => {
+    const value = e.target.value
+    if (value === '' || (!isNaN(value) && parseFloat(value) >= 0)) {
+      setMaxPrice(value)
+    }
+  }
+
   const handleSearchChange = (e) => {
-    // Update the search term state when the user types in the search field
     setSearchTerm(e.target.value)
   }
 
@@ -119,8 +140,11 @@ const Shop = () => {
 
   const resetFilters = () => {
     setPriceFilter('')
+    setMinPrice('') // Reset min price
+    setMaxPrice('') // Reset max price
     setSearchTerm('')
-    window.location.reload()
+    dispatch(setChecked([])) // Reset category filters
+    dispatch(setProducts(filteredProductsQuery.data || [])) // Reset to all products
   }
 
   const toggleFilter = () => {
@@ -129,13 +153,13 @@ const Shop = () => {
 
   // Custom styles based on the specified color theme
   const styles = {
-    primaryBg: 'rgb(7, 10, 19)', // Dark navy/black primary color
-    secondaryBg: 'rgb(13, 17, 30)', // Slightly lighter shade for contrast
-    tertiaryBg: 'rgb(20, 25, 40)', // Even lighter shade for input fields
-    accentColor: 'rgb(211, 190, 249)', // Lavender accent color
-    accentHover: 'rgb(190, 170, 228)', // Slightly darker lavender for hover states
-    lightText: 'rgb(240, 240, 245)', // Light text for dark backgrounds
-    mediumText: 'rgb(200, 200, 210)', // Medium text for better readability
+    primaryBg: 'rgb(7, 10, 19)',
+    secondaryBg: 'rgb(13, 17, 30)',
+    tertiaryBg: 'rgb(20, 25, 40)',
+    accentColor: 'rgb(211, 190, 249)',
+    accentHover: 'rgb(190, 170, 228)',
+    lightText: 'rgb(240, 240, 245)',
+    mediumText: 'rgb(200, 200, 210)',
   }
 
   return (
@@ -341,22 +365,81 @@ const Shop = () => {
                     color: styles.accentColor,
                   }}
                 >
-                  Price Filter
+                  Price Filters
                 </h2>
-                <div className='p-4'>
-                  <input
-                    type='text'
-                    placeholder='Enter Price'
-                    value={priceFilter}
-                    onChange={handlePriceChange}
-                    className='w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 transition-colors'
-                    style={{
-                      backgroundColor: styles.tertiaryBg,
-                      color: styles.lightText,
-                      border: '1px solid rgba(211, 190, 249, 0.3)',
-                      boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
-                    }}
-                  />
+                <div className='p-4 space-y-4'>
+                  {/* Exact Price Filter */}
+                  <div>
+                    <label
+                      className='block text-sm mb-2'
+                      style={{ color: styles.mediumText }}
+                    >
+                      Exact Price
+                    </label>
+                    <input
+                      type='number'
+                      placeholder='Enter Exact Price'
+                      value={priceFilter}
+                      onChange={handlePriceChange}
+                      min='0'
+                      className='w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 transition-colors'
+                      style={{
+                        backgroundColor: styles.tertiaryBg,
+                        color: styles.lightText,
+                        border: '1px solid rgba(211, 190, 249, 0.3)',
+                        boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+                      }}
+                    />
+                  </div>
+                  {/* Price Range Filter */}
+                  <div>
+                    <label
+                      className='block text-sm mb-2'
+                      style={{ color: styles.mediumText }}
+                    >
+                      Price Range
+                    </label>
+                    <div className='flex gap-2'>
+                      <input
+                        type='number'
+                        placeholder='Min Price'
+                        value={minPrice}
+                        onChange={handleMinPriceChange}
+                        min='0'
+                        className='w-1/2 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 transition-colors'
+                        style={{
+                          backgroundColor: styles.tertiaryBg,
+                          color: styles.lightText,
+                          border: '1px solid rgba(211, 190, 249, 0.3)',
+                          boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+                        }}
+                      />
+                      <input
+                        type='number'
+                        placeholder='Max Price'
+                        value={maxPrice}
+                        onChange={handleMaxPriceChange}
+                        min='0'
+                        className='w-1/2 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 transition-colors'
+                        style={{
+                          backgroundColor: styles.tertiaryBg,
+                          color: styles.lightText,
+                          border: '1px solid rgba(211, 190, 249, 0.3)',
+                          boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+                        }}
+                      />
+                    </div>
+                    {minPrice &&
+                      maxPrice &&
+                      parseFloat(minPrice) > parseFloat(maxPrice) && (
+                        <p
+                          className='text-sm mt-2'
+                          style={{ color: 'rgb(255, 100, 100)' }}
+                        >
+                          Minimum price cannot exceed maximum price
+                        </p>
+                      )}
+                  </div>
                 </div>
               </div>
 
@@ -421,6 +504,43 @@ const Shop = () => {
                     </p>
                   </div>
                 )}
+                {(minPrice || maxPrice) && (
+                  <div
+                    className='px-3 py-1 rounded-full ml-2'
+                    style={{ backgroundColor: 'rgba(211, 190, 249, 0.15)' }}
+                  >
+                    <p
+                      className='text-sm flex items-center gap-2'
+                      style={{ color: styles.accentColor }}
+                    >
+                      <span>
+                        Price Range: {minPrice || '0'} - {maxPrice || '∞'}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setMinPrice('')
+                          setMaxPrice('')
+                        }}
+                        className='hover:opacity-80'
+                      >
+                        <svg
+                          xmlns='http://www.w3.org/2000/svg'
+                          className='h-4 w-4'
+                          fill='none'
+                          viewBox='0 0 24 24'
+                          stroke='currentColor'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M6 18L18 6M6 6l12 12'
+                          />
+                        </svg>
+                      </button>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -463,8 +583,8 @@ const Shop = () => {
                   className='mt-2 text-center'
                   style={{ color: styles.mediumText }}
                 >
-                  {searchTerm
-                    ? 'No products match your search criteria.'
+                  {searchTerm || minPrice || maxPrice
+                    ? 'No products match your search or price criteria.'
                     : 'Try adjusting your filters to find products.'}
                 </p>
               </div>

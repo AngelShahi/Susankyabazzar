@@ -27,6 +27,8 @@ const ProductCard = ({ p }) => {
   const discountedPrice = hasDiscount
     ? p.price - p.price * (p.discount.percentage / 100)
     : null
+  // Check if low stock or out of stock badge is present
+  const hasStockBadge = p.quantity <= 5
 
   const addToCartHandler = async (product, qty) => {
     if (product.quantity <= 0) {
@@ -94,9 +96,13 @@ const ProductCard = ({ p }) => {
             </span>
           )}
 
-          {/* Discount badge - show if there's an active discount */}
+          {/* Discount badge - adjust position based on stock badge */}
           {hasDiscount && (
-            <span className='absolute top-3 left-3 ml-20 bg-green-600 text-white text-xs font-medium px-2.5 py-0.5 rounded-full z-10 flex items-center'>
+            <span
+              className={`absolute left-3 bg-green-600 text-white text-xs font-medium px-2.5 py-0.5 rounded-full z-10 flex items-center ${
+                hasStockBadge ? 'top-10' : 'top-3'
+              }`}
+            >
               <FaPercentage size={12} className='mr-1' />
               {p.discount.percentage}% OFF
             </span>

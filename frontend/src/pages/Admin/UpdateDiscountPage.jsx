@@ -69,7 +69,7 @@ const UpdateDiscountPage = () => {
 
       await applyDiscount(discountData).unwrap()
       toast.success('Discount updated successfully')
-      navigate('/admin/discounts')
+      navigate('/admin/DiscountListPage')
     } catch (error) {
       console.error('Failed to update discount:', error)
       toast.error(error?.data?.error || 'Failed to update discount')

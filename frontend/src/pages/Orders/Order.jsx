@@ -799,22 +799,23 @@ const Order = () => {
           {userInfo &&
             userInfo.isAdmin &&
             !order.isPaid &&
-            !order.isCancelled &&
-            order.paymentProofImage &&
-            order.paymentMethod === 'QRPayment' && (
+            !order.isCancelled && (
               <div className='border border-[rgba(211,190,249,0.3)] rounded-lg shadow-lg shadow-[rgba(211,190,249,0.1)] bg-[rgba(15,18,30,0.95)] backdrop-blur-sm overflow-hidden'>
                 <h3 className='text-lg font-bold p-4 border-b border-[rgba(211,190,249,0.2)] bg-[rgba(211,190,249,0.1)] text-white flex items-center'>
                   Payment Verification
                 </h3>
 
                 <div className='p-4 space-y-4'>
-                  <div className='border border-[rgba(211,190,249,0.3)] rounded-lg overflow-hidden'>
-                    <img
-                      src={order.paymentProofImage}
-                      alt='Payment Proof'
-                      className='w-full h-auto'
-                    />
-                  </div>
+                  {order.paymentProofImage &&
+                    order.paymentMethod === 'QRPayment' && (
+                      <div className='border border-[rgba(211,190,249,0.3)] rounded-lg overflow-hidden'>
+                        <img
+                          src={order.paymentProofImage}
+                          alt='Payment Proof'
+                          className='w-full h-auto'
+                        />
+                      </div>
+                    )}
                   <button
                     onClick={handlePayment}
                     disabled={loadingPay}
@@ -836,7 +837,7 @@ const Order = () => {
                             clipRule='evenodd'
                           />
                         </svg>
-                        Verify & Mark as Paid
+                        Mark as Paid
                       </>
                     )}
                   </button>
@@ -847,7 +848,8 @@ const Order = () => {
           {userInfo &&
             userInfo.isAdmin &&
             order.isPaid &&
-            !order.isDelivered && (
+            !order.isDelivered &&
+            !order.isCancelled && (
               <div className='border border-[rgba(211,190,249,0.3)] rounded-lg shadow-lg shadow-[rgba(211,190,249,0.1)] bg-[rgba(15,18,30,0.95)] backdrop-blur-sm overflow-hidden'>
                 <div className='p-4'>
                   <button
@@ -921,4 +923,3 @@ const Order = () => {
 }
 
 export default Order
-  
