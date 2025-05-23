@@ -1,3 +1,7 @@
+// ============================================
+// BACKEND: Fixed Cart Controller
+// ============================================
+
 import asyncHandler from '../middlewares/asyncHandler.js'
 import Cart from '../models/cartModel.js'
 import Product from '../models/productModel.js'
@@ -7,10 +11,12 @@ import { addDecimals } from '../utils/cartUtils.js'
 const getCart = asyncHandler(async (req, res) => {
   const userId = req.user._id
 
-  let cart = await Cart.findOne({ user: userId })
+  let cart = await Cart.findOne({ user: userId }).populate({
+    path: 'cartItems.product',
+    select: 'name image price quantity discount',
+  })
 
   if (!cart) {
-    // Create a new cart if one doesn't exist
     cart = await Cart.create({
       user: userId,
       cartItems: [],
@@ -21,42 +27,52 @@ const getCart = asyncHandler(async (req, res) => {
     })
   }
 
+  // Ensure quantity is set for each cart item
+  cart.cartItems = await Promise.all(
+    cart.cartItems.map(async (item) => {
+      const itemObject = item.toObject()
+      // Use product.quantity if available, otherwise fallback to existing item.quantity or fetch from Product
+      if (!itemObject.quantity) {
+        const product = await Product.findById(item.product)
+        itemObject.quantity = product?.quantity ?? item.quantity ?? 20
+      }
+      return itemObject
+    })
+  )
+
   res.status(200).json(cart)
 })
 
-// Add item to cart
+// FIXED: Add item to cart with proper total calculations
 const addToCart = asyncHandler(async (req, res) => {
   try {
     const userId = req.user._id
-    const { _id, name, image, price, qty, product, discount, countInStock } =
-      req.body
+    const { _id, name, image, price, qty, product, discount } = req.body
 
     console.log('Request body:', req.body)
 
     // Validate incoming data
-    if (
-      !product ||
-      !name ||
-      price === undefined ||
-      qty === undefined ||
-      !countInStock
-    ) {
+    if (!product || !name || price === undefined || qty === undefined) {
       return res
         .status(400)
         .json({ message: 'Missing required product information' })
     }
 
-    // Validate quantity against stock
-    if (qty > countInStock) {
-      return res
-        .status(400)
-        .json({ message: `Only ${countInStock} items available in stock` })
-    }
-
-    // Fetch the product to validate price and discount
+    // Fetch the product to validate price, discount, and quantity
     const productDoc = await Product.findById(product)
+    console.log('Product document:', productDoc)
     if (!productDoc) {
       return res.status(404).json({ message: 'Product not found' })
+    }
+
+    // Use productDoc.quantity as the source of truth
+    const quantity = productDoc.quantity ?? 20 // Fallback to 20 if undefined
+
+    // Validate quantity against stock
+    if (qty > quantity) {
+      return res
+        .status(400)
+        .json({ message: `Only ${quantity} items available in stock` })
     }
 
     // Calculate the correct price based on current discount status
@@ -76,17 +92,14 @@ const addToCart = asyncHandler(async (req, res) => {
 
     // Validate provided price
     if (Math.abs(price - expectedPrice) > 0.01) {
-      return res
-        .status(400)
-        .json({
-          message: 'Provided price does not match current product price',
-        })
+      return res.status(400).json({
+        message: 'Provided price does not match current product price',
+      })
     }
 
     let cart = await Cart.findOne({ user: userId })
 
     if (!cart) {
-      // Create a new cart if one doesn't exist
       cart = await Cart.create({
         user: userId,
         cartItems: [],
@@ -108,6 +121,7 @@ const addToCart = asyncHandler(async (req, res) => {
       cart.cartItems[itemIndex].qty = qty
       cart.cartItems[itemIndex].price = price
       cart.cartItems[itemIndex].discount = isDiscountValid ? discount : null
+      cart.cartItems[itemIndex].quantity = quantity // Ensure quantity is set
     } else {
       // Add new item
       const newItem = {
@@ -118,11 +132,12 @@ const addToCart = asyncHandler(async (req, res) => {
         qty,
         product,
         discount: isDiscountValid ? discount : null,
+        quantity, // Ensure quantity is set
       }
       cart.cartItems.push(newItem)
     }
 
-    // Calculate prices
+    // FIXED: Calculate cart totals after updating items
     cart.itemsPrice = addDecimals(
       cart.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
     )
@@ -137,8 +152,18 @@ const addToCart = asyncHandler(async (req, res) => {
       Number(cart.taxPrice)
     ).toFixed(2)
 
+    // Log cart before saving to verify quantity
+    console.log('Cart before save:', JSON.stringify(cart, null, 2))
+
     // Save cart
     const updatedCart = await cart.save()
+
+    // FIXED: Populate product details before sending response
+    await updatedCart.populate({
+      path: 'cartItems.product',
+      select: 'name image price quantity discount',
+    })
+
     console.log('Updated cart:', updatedCart)
 
     res.status(200).json(updatedCart)
@@ -147,7 +172,6 @@ const addToCart = asyncHandler(async (req, res) => {
     res.status(500).json({
       message: 'Failed to update cart',
       error: error.message,
-      stack: error.stack,
     })
   }
 })
@@ -182,7 +206,6 @@ const removeFromCart = asyncHandler(async (req, res) => {
     Number(cart.taxPrice)
   ).toFixed(2)
 
-  // Save cart
   await cart.save()
 
   res.status(200).json(cart)

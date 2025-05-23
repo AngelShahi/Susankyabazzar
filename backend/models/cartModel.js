@@ -26,6 +26,7 @@ const cartSchema = mongoose.Schema(
           endDate: { type: Date },
           name: { type: String, default: '', trim: true },
         },
+        quantity: { type: Number, required: true }, // Added to match "after" schema
       },
     ],
     shippingAddress: {

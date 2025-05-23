@@ -225,10 +225,10 @@ const ProductDetails = () => {
                       <div>
                         <div className='flex items-center'>
                           <p className='text-4xl font-bold text-green-400'>
-                            ${discountedPrice.toFixed(2)}
+                            ₨ {discountedPrice}
                           </p>
                           <p className='ml-3 text-xl text-gray-400 line-through'>
-                            ${product.price.toFixed(2)}
+                            ₨ {product.price}
                           </p>
                         </div>
                         <div className='mt-2 flex items-center text-sm text-green-400'>
@@ -243,7 +243,7 @@ const ProductDetails = () => {
                       </div>
                     ) : (
                       <p className='text-4xl font-bold text-white'>
-                        ${product.price.toFixed(2)}
+                        ₨ {product.price}
                       </p>
                     )}
 

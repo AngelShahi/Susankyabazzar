@@ -222,7 +222,7 @@ const Order = () => {
             <p className='text-white'>Cash on Delivery</p>
             <p className='text-sm text-gray-400 mt-2'>Payment Instructions</p>
             <p className='text-white'>
-              Please prepare ${order.totalPrice} in cash for the delivery agent.
+              Please prepare ₨{order.totalPrice} in cash for the delivery agent.
             </p>
           </div>
         )
@@ -293,8 +293,8 @@ const Order = () => {
                     {order.orderItems.map((item, index) => {
                       const hasDiscount = isDiscountActive(item.discount)
                       const originalPrice = hasDiscount
-                        ? getOriginalPrice(item.price, item.discount).toFixed(2)
-                        : item.price.toFixed(2)
+                        ? getOriginalPrice(item.price, item.discount)
+                        : item.price
                       return (
                         <tr
                           key={index}
@@ -342,22 +342,22 @@ const Order = () => {
                                   className='text-lg font-bold'
                                   style={{ color: 'rgba(74, 222, 128, 0.9)' }}
                                 >
-                                  ${item.price.toFixed(2)}
+                                  ₨{item.price}
                                 </span>
                                 <span
                                   className='text-sm line-through ml-2'
                                   style={{ color: 'rgba(255, 255, 255, 0.5)' }}
                                 >
-                                  ${originalPrice}
+                                  ₨{originalPrice}
                                 </span>
                               </div>
                             ) : (
-                              <span>${item.price.toFixed(2)}</span>
+                              <span>₨{item.price}</span>
                             )}
                           </td>
 
                           <td className='p-4 text-right font-medium text-[rgb(211,190,249)]'>
-                            ${(item.qty * item.price).toFixed(2)}
+                            ₨{item.qty * item.price}
                           </td>
                         </tr>
                       )
@@ -416,7 +416,7 @@ const Order = () => {
             <div className='p-4 space-y-2 text-gray-300'>
               <div className='flex justify-between mb-2'>
                 <span>Items</span>
-                <span className='font-medium'>${order.itemsPrice}</span>
+                <span className='font-medium'>₨{order.itemsPrice}</span>
               </div>
 
               {totalSavings > 0 && (
@@ -426,25 +426,25 @@ const Order = () => {
                     Total Savings:
                   </span>
                   <span className='font-medium text-[rgba(74,222,128,0.9)]'>
-                    -${totalSavings.toFixed(2)}
+                    -₨{totalSavings}
                   </span>
                 </div>
               )}
 
               <div className='flex justify-between mb-2'>
                 <span>Shipping</span>
-                <span className='font-medium'>${order.shippingPrice}</span>
+                <span className='font-medium'>₨{order.shippingPrice}</span>
               </div>
 
               <div className='flex justify-between mb-2'>
                 <span>Tax</span>
-                <span className='font-medium'>${order.taxPrice}</span>
+                <span className='font-medium'>₨{order.taxPrice}</span>
               </div>
 
               <div className='flex justify-between pt-3 border-t border-[rgba(211,190,249,0.2)] mt-3 font-bold text-white'>
                 <span>Total</span>
                 <span className='text-[rgb(211,190,249)]'>
-                  ${order.totalPrice}
+                  ₨{order.totalPrice}
                 </span>
               </div>
             </div>
@@ -577,7 +577,7 @@ const Order = () => {
                 </h3>
                 <div className='p-4 space-y-4'>
                   <p className='text-gray-300'>
-                    Click below to pay ${order.totalPrice} using Khalti Digital
+                    Click below to pay ₨{order.totalPrice} using Khalti Digital
                     Wallet.
                   </p>
                   <button

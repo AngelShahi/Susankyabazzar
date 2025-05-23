@@ -23,7 +23,7 @@ const Product = ({ product }) => {
               {product.name}
             </h2>
             <span className='bg-[rgba(211,190,249,0.15)] text-[rgb(211,190,249)] text-sm font-medium px-3 py-1 rounded-full'>
-              ${product.price}
+              ₨ {product.price}
             </span>
           </div>
 

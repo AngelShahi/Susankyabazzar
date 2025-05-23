@@ -212,7 +212,7 @@ const ProductTabs = ({
                         </span>
                       </div>
                       <p className='text-gray-300 font-bold mt-2'>
-                        ${product.price}
+                        ₨ {product.price}
                       </p>
                     </div>
                   </div>

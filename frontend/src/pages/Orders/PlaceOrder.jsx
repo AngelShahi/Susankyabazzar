@@ -13,6 +13,7 @@ const PlaceOrder = () => {
   const dispatch = useDispatch()
 
   const cart = useSelector((state) => state.cart)
+  const user = useSelector((state) => state.auth.userInfo)
 
   const [createOrder, { isLoading, error }] = useCreateOrderMutation()
   const [clearCart] = useClearCartMutation()
@@ -25,22 +26,81 @@ const PlaceOrder = () => {
 
   const placeOrderHandler = async () => {
     try {
-      const res = await createOrder({
-        orderItems: cart.cartItems,
-        shippingAddress: cart.shippingAddress,
-        paymentMethod: cart.paymentMethod,
-        itemsPrice: cart.itemsPrice,
-        shippingPrice: cart.shippingPrice,
-        taxPrice: cart.taxPrice,
-        totalPrice: cart.totalPrice,
-      }).unwrap()
+      // Get user info from Redux state
+      if (!user || !user._id) {
+        toast.error('Please login to place an order')
+        navigate('/login')
+        return
+      }
+
+      // Calculate total savings from discounts
+      const totalSavings = cart.cartItems.reduce((acc, item) => {
+        if (item.discount?.active) {
+          const discountAmount = (item.price * item.discount.percentage) / 100
+          return acc + discountAmount * item.qty
+        }
+        return acc
+      }, 0)
+
+      const orderData = {
+        user: user._id,
+        orderItems: cart.cartItems.map((item) => ({
+          name: item.name,
+          qty: item.qty,
+          image: item.image,
+          price: item.price,
+          // FIX: Extract the product ID properly
+          product:
+            typeof item.product === 'object' ? item.product._id : item.product,
+          discount: item.discount || {
+            percentage: 0,
+            active: false,
+            startDate: null,
+            endDate: null,
+            name: '',
+          },
+        })),
+        shippingAddress: {
+          address: cart.shippingAddress.address || '',
+          city: cart.shippingAddress.city || '',
+          postalCode: cart.shippingAddress.postalCode || '',
+          country: cart.shippingAddress.country || '',
+        },
+        paymentMethod: cart.paymentMethod || 'Esewa',
+        itemsPrice: cart.itemsPrice || 0,
+        shippingPrice: cart.shippingPrice || 0,
+        taxPrice: cart.taxPrice || 0,
+        totalPrice: cart.totalPrice || 0,
+        totalSavings: totalSavings,
+        isPaid: false,
+        isDelivered: false,
+        isCancelled: false,
+        paymentProofImage: '',
+        paymentResult: {},
+        cancellationReason: '',
+      }
+
+      console.log('Order data being sent:', orderData) // Debug log
+
+      const res = await createOrder(orderData).unwrap()
 
       // Clear cart after successful order
       await clearCart().unwrap()
 
       navigate(`/order/${res._id}`)
     } catch (error) {
-      toast.error(error)
+      console.error('Order creation error:', error) // Better error logging
+
+      // Handle different error types
+      if (error?.data?.message) {
+        toast.error(error.data.message)
+      } else if (error?.message) {
+        toast.error(error.message)
+      } else if (error?.error) {
+        toast.error(error.error)
+      } else {
+        toast.error('Failed to place order. Please try again.')
+      }
     }
   }
 
@@ -140,7 +200,11 @@ const PlaceOrder = () => {
                       style={{ color: 'rgba(255, 255, 255, 0.9)' }}
                     >
                       <Link
-                        to={`/product/${item.product}`}
+                        to={`/product/${
+                          typeof item.product === 'object'
+                            ? item.product._id
+                            : item.product
+                        }`}
                         className='hover:text-purple-300 transition-colors'
                         style={{ color: 'rgba(211, 190, 249, 0.9)' }}
                       >
@@ -157,13 +221,13 @@ const PlaceOrder = () => {
                       className='p-4'
                       style={{ color: 'rgba(255, 255, 255, 0.9)' }}
                     >
-                      ${item.price.toFixed(2)}
+                      ₨ {item.price}
                     </td>
                     <td
                       className='p-4 font-medium'
                       style={{ color: 'rgba(211, 190, 249, 0.9)' }}
                     >
-                      ${(item.qty * item.price).toFixed(2)}
+                      ₨ {item.qty * item.price}
                     </td>
                   </tr>
                 ))}
@@ -206,21 +270,21 @@ const PlaceOrder = () => {
                     style={{ color: 'rgba(255, 255, 255, 0.8)' }}
                   >
                     <span>Items:</span>
-                    <span className='font-medium'>${cart.itemsPrice}</span>
+                    <span className='font-medium'>₨ {cart.itemsPrice}</span>
                   </li>
                   <li
                     className='flex justify-between'
                     style={{ color: 'rgba(255, 255, 255, 0.8)' }}
                   >
                     <span>Shipping:</span>
-                    <span className='font-medium'>${cart.shippingPrice}</span>
+                    <span className='font-medium'>₨ {cart.shippingPrice}</span>
                   </li>
                   <li
                     className='flex justify-between'
                     style={{ color: 'rgba(255, 255, 255, 0.8)' }}
                   >
                     <span>Tax:</span>
-                    <span className='font-medium'>${cart.taxPrice}</span>
+                    <span className='font-medium'>₨ {cart.taxPrice}</span>
                   </li>
                   <li
                     className='flex justify-between font-bold pt-3 border-t mt-3'
@@ -230,13 +294,15 @@ const PlaceOrder = () => {
                     }}
                   >
                     <span>Total:</span>
-                    <span>${cart.totalPrice}</span>
+                    <span>₨ {cart.totalPrice}</span>
                   </li>
                 </ul>
               </div>
 
               {error && (
-                <Message variant='danger'>{error.data.message}</Message>
+                <Message variant='danger'>
+                  {error.data?.message || error.message || 'An error occurred'}
+                </Message>
               )}
             </div>
 

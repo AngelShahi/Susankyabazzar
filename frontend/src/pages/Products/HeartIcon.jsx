@@ -1,4 +1,3 @@
-// components/product/HeartIcon.jsx
 import { useEffect, useState } from 'react'
 import { FaHeart, FaRegHeart } from 'react-icons/fa'
 import { useSelector, useDispatch } from 'react-redux'
@@ -40,21 +39,17 @@ const HeartIcon = ({ product }) => {
   }, [product._id])
 
   const toggleFavorites = async () => {
-    // Check if user is logged in
     const userInfo = localStorage.getItem('userInfo')
     if (!userInfo) {
-      // Redirect to login or show a message
       alert('Please log in to save favorites')
       return
     }
 
     try {
       if (isFavorite) {
-        // Remove from API and update local state
         await removeFromFavoriteAPI(product._id).unwrap()
         dispatch(removeFromFavorites(product))
       } else {
-        // Add to API and update local state
         await addToFavoriteAPI(product._id).unwrap()
         dispatch(addToFavorites(product))
       }
@@ -66,18 +61,22 @@ const HeartIcon = ({ product }) => {
   return (
     <div
       id={`heart-icon-${product._id}`}
-      className='absolute top-2 right-5 cursor-pointer'
+      className='absolute top-2 right-5 cursor-pointer transition-colors duration-200 hover:scale-110'
       onClick={toggleFavorites}
     >
       {isFavorite ? (
-        <FaHeart className='text-pink-500 drop-shadow-md' />
+        <FaHeart
+          className='text-pink-600 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]'
+          size={18}
+        />
       ) : (
         <FaRegHeart
           className={
             isDarkBackground
-              ? 'text-gray-200 drop-shadow-md'
-              : 'text-gray-600 drop-shadow-md'
+              ? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]'
+              : 'text-gray-900 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]'
           }
+          size={18}
         />
       )}
     </div>

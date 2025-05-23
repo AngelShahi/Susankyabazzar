@@ -23,13 +23,13 @@ import {
   FaLinkedin,
 } from 'react-icons/fa'
 
-// Product component for special products section - INCREASED SIZE
+// Product component for special products section
 const Product = ({ product }) => {
   const isFeatured = product.rating >= 4.5
   const isNew = moment(product.createdAt).isAfter(moment().subtract(30, 'days'))
 
   return (
-    <div className='<div class="bg-[rgb(7,10,19)]"> rounded-lg overflow-hidden border border-[rgb(211,190,249)] transition-transform duration-300 hover:transform hover:scale-105 shadow-lg hover:shadow-[rgb(211,190,249)]/20'>
+    <div className='bg-[rgb(7,10,19)] rounded-lg overflow-hidden border border-[rgb(211,190,249)] transition-transform duration-300 hover:transform hover:scale-105 shadow-lg hover:shadow-[rgb(211,190,249)]/20'>
       <div className='relative w-full h-64 overflow-hidden'>
         <img
           src={product.image}
@@ -63,7 +63,7 @@ const Product = ({ product }) => {
 
         <div className='flex justify-between items-center'>
           <span className='text-[rgb(211,190,249)] font-bold text-xl'>
-            ${product.price}
+            ₨ {product.price}
           </span>
           <Link
             to={`/product/${product._id}`}
@@ -77,7 +77,7 @@ const Product = ({ product }) => {
   )
 }
 
-// Hero Banner Carousel component - INCREASED SIZE
+// Hero Banner Carousel component
 const ProductCarousel = () => {
   const { data: products, isLoading, error } = useGetTopProductsQuery()
 
@@ -142,7 +142,7 @@ const ProductCarousel = () => {
         <Slider {...settings}>
           {products.map((product) => (
             <div key={product._id} className='relative'>
-              <div className='w-full h-120 relative <div class="bg-[rgb(7,10,19)]">'>
+              <div className='w-full h-120 relative bg-[rgb(7,10,19)]'>
                 <img
                   src={product.image}
                   alt={product.name}
@@ -174,7 +174,7 @@ const ProductCarousel = () => {
 // Footer component
 const Footer = () => {
   return (
-    <footer className='<div class="bg-[rgb(7,10,19)]"> text-gray-300 py-12 border-t border-[rgb(211,190,249)]/30'>
+    <footer className='bg-[rgb(7,10,19)] text-gray-300 py-12 border-t border-[rgb(211,190,249)]/30'>
       <div className='max-w-6xl mx-auto px-4'>
         <div className='grid grid-cols-1 md:grid-cols-4 gap-8'>
           <div>
@@ -291,27 +291,27 @@ const Home = () => {
   const { data, isLoading, isError } = useGetProductsQuery({ keyword })
 
   return (
-    <div className='<div class="bg-[rgb(7,10,19)]"> min-h-screen'>
+    <div className='bg-[rgb(7,10,19)] min-h-screen'>
       {/* Header */}
       {!keyword ? <Header /> : null}
 
       {/* Hero Banner Section with proper spacing */}
-      <div className='<div class="bg-[rgb(7,10,19)]"> py-8'>
+      <div className='bg-[rgb(7,10,19)] py-8'>
         <ProductCarousel />
       </div>
 
       {isLoading ? (
-        <div className='flex justify-center my-12 <div class="bg-[rgb(7,10,19)]">'>
+        <div className='flex justify-center my-12 bg-[rgb(7,10,19)]'>
           <Loader />
         </div>
       ) : isError ? (
-        <div className='max-w-6xl mx-auto px-4 my-12 <div class="bg-[rgb(7,10,19)]">'>
+        <div className='max-w-6xl mx-auto px-4 my-12 bg-[rgb(7,10,19)]'>
           <Message variant='danger'>
             {isError?.data.message || isError.error}
           </Message>
         </div>
       ) : (
-        <div className='<div class="bg-[rgb(7,10,19)]">'>
+        <div className='bg-[rgb(7,10,19)]'>
           {/* Special Products Section */}
           <section className='py-20 max-w-6xl mx-auto px-4'>
             <div className='text-center mb-16'>
@@ -349,7 +349,7 @@ const Home = () => {
               {data.products.slice(0, 3).map((product) => (
                 <div
                   key={`featured-${product._id}`}
-                  className='<div class="bg-[rgb(7,10,19)]"> rounded-lg overflow-hidden border border-[rgb(211,190,249)] transition-all duration-300 hover:shadow-lg hover:shadow-[rgb(211,190,249)]/20'
+                  className='bg-[rgb(7,10,19)] rounded-lg overflow-hidden border border-[rgb(211,190,249)] transition-all duration-300 hover:shadow-lg hover:shadow-[rgb(211,190,249)]/20'
                 >
                   <div className='relative'>
                     <img
@@ -385,7 +385,7 @@ const Home = () => {
 
                     <div className='flex justify-between items-center mt-4'>
                       <span className='text-[rgb(211,190,249)] font-bold text-xl'>
-                        ${product.price}
+                        ₨ {product.price}
                       </span>
                       <Link
                         to={`/product/${product._id}`}
@@ -400,7 +400,7 @@ const Home = () => {
             </div>
           </section>
 
-          {/* Call to Action Banner - Moved above footer with moonlight theme */}
+          {/* Call to Action Banner */}
           <section className='bg-gradient-to-r from-gray-800 py-20 px-4 mb-16'>
             <div className='max-w-6xl mx-auto text-center'>
               <h2 className='text-4xl font-bold mb-6 text-white'>

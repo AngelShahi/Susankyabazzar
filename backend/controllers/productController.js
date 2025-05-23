@@ -310,19 +310,20 @@ const applyBulkDiscount = asyncHandler(async (req, res) => {
     brandNames,
   } = req.body
 
+  // Validate discount percentage
   if (!percentage || percentage < 0 || percentage > 100) {
     return res
       .status(400)
       .json({ error: 'Valid discount percentage (0-100) is required' })
   }
 
+  // Validate start and end dates
   if (!startDate || !endDate) {
     return res.status(400).json({ error: 'Start and end dates are required' })
   }
 
-  let query = {}
-
   // Build query based on provided filters
+  let query = {}
   if (productIds?.length > 0) {
     query._id = { $in: productIds }
   } else if (categoryIds?.length > 0) {
@@ -335,6 +336,15 @@ const applyBulkDiscount = asyncHandler(async (req, res) => {
     })
   }
 
+  // Check if any products match the query
+  const productCount = await Product.countDocuments(query)
+  if (productCount === 0) {
+    return res.status(404).json({
+      error: 'No products found for the specified criteria',
+    })
+  }
+
+  // Apply the discount
   const discountData = {
     'discount.percentage': Number(percentage),
     'discount.active': true,

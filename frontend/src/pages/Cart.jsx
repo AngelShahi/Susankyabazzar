@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   FaTrash,
@@ -23,6 +23,9 @@ const Cart = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
+  // Add loading state for individual items
+  const [updatingItems, setUpdatingItems] = useState(new Set())
+
   const cart = useSelector((state) => state.cart)
   const { cartItems } = cart
 
@@ -39,48 +42,93 @@ const Cart = () => {
     }
   }, [data, dispatch])
 
+  // FIXED: Remove duplicate items and merge quantities
+  const uniqueCartItems = useMemo(() => {
+    if (!cartItems || cartItems.length === 0) return []
+
+    const itemMap = new Map()
+
+    cartItems.forEach((item) => {
+      const key = item.product?._id || item.product || item._id
+
+      if (itemMap.has(key)) {
+        // Merge quantities for duplicate items
+        const existingItem = itemMap.get(key)
+        existingItem.qty = (existingItem.qty || 0) + (item.qty || 0)
+      } else {
+        // Add new item with a unique identifier
+        itemMap.set(key, {
+          ...item,
+          uniqueKey: `${key}-${Date.now()}-${Math.random()}`, // Ensure uniqueness
+        })
+      }
+    })
+
+    return Array.from(itemMap.values())
+  }, [cartItems])
+
+  // Complete updateQuantityHandler with proper loading states
   const updateQuantityHandler = async (item, newQty) => {
     if (!userInfo) {
       navigate('/login')
       return
     }
 
-    // Convert and validate quantity
-    const quantity = Number(newQty)
-    if (isNaN(quantity) || quantity < 1) {
-      toast.error('Quantity must be at least 1')
+    // Use the product ID as the key for preventing concurrent updates
+    const itemKey = item.product?._id || item.product || item._id
+
+    // Prevent multiple concurrent updates for the same item
+    if (updatingItems.has(itemKey)) {
       return
     }
 
-    // Calculate maximum allowed quantity
-    const countInStock = item.countInStock || 20
-    const maxQty = Math.min(countInStock, 20)
+    // Convert and validate quantity
+    const quantity = Number(newQty)
+    if (isNaN(quantity) || quantity < 1) {
+      return
+    }
+
+    // Use item.quantity 
+    const productQuantity = item.quantity ?? item.product?.quantity ?? 20
+    const maxQty = Math.min(productQuantity, 20)
     const validatedQty = Math.min(quantity, maxQty)
 
-    try {
-      await addToCartApi({
-        _id: item._id,
-        name: item.name,
-        image: item.image,
-        price: item.price,
-        qty: validatedQty,
-        product: item.product,
-        discount: item.discount,
-        countInStock: item.countInStock,
-      }).unwrap()
+    // Add item to updating set using the consistent key
+    setUpdatingItems((prev) => new Set([...prev, itemKey]))
 
-      refetch()
-      toast.success('Cart updated successfully')
+    // Complete payload structure that matches backend expectations
+    const payload = {
+      _id: item._id,
+      name: item.name,
+      image: item.image,
+      price: item.price,
+      qty: validatedQty,
+      product: item.product?._id || item.product,
+      discount: item.discount || null,
+      quantity: productQuantity,
+    }
+
+    try {
+      // Backend will find existing item by product ID and update qty
+      await addToCartApi(payload).unwrap()
     } catch (err) {
       console.error('Cart update error:', err)
-      toast.error(err?.data?.message || err.error || 'Failed to update cart')
+      // Only refetch on error to restore correct state
+      refetch()
+    } finally {
+      // Remove item from updating set
+      setUpdatingItems((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(itemKey)
+        return newSet
+      })
     }
   }
 
-  const removeFromCartHandler = async (id) => {
+  const removeFromCartHandler = async (item) => {
+    const itemId = item._id
     try {
-      await removeFromCartApi(id).unwrap()
-      refetch()
+      await removeFromCartApi(itemId).unwrap()
       toast.success('Item removed from cart')
     } catch (err) {
       toast.error(err?.data?.message || err.error || 'Failed to remove item')
@@ -109,7 +157,7 @@ const Cart = () => {
 
   // Calculate total savings from discounts
   const calculateTotalSavings = () => {
-    return cartItems.reduce((savings, item) => {
+    return uniqueCartItems.reduce((savings, item) => {
       if (isDiscountActive(item.discount)) {
         const originalPrice = getOriginalPrice(item.price, item.discount)
         const savingsPerItem = (originalPrice - item.price) * item.qty
@@ -149,7 +197,7 @@ const Cart = () => {
           </Link>
         </div>
 
-        {cartItems.length === 0 ? (
+        {uniqueCartItems.length === 0 ? (
           <div
             className='flex flex-col items-center justify-center rounded-lg border p-12 shadow-lg'
             style={{
@@ -171,11 +219,7 @@ const Cart = () => {
             <Link
               to='/shop'
               className='rounded-lg font-medium py-3 px-8 transition-colors'
-              style={{
-                backgroundColor: 'rgba(211, 190, 249, 0.9)',
-                color: 'rgb(7, 10, 19)',
-                boxShadow: '0 4px 12px rgba(211, 190, 249, 0.5)',
-              }}
+              style4810
               onMouseOver={(e) => {
                 e.currentTarget.style.backgroundColor = 'rgba(211, 190, 249, 1)'
                 e.currentTarget.style.boxShadow =
@@ -208,19 +252,23 @@ const Cart = () => {
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
                 }}
               >
-                {cartItems.map((item) => {
-                  const countInStock = item.countInStock || 20
-                  const maxQty = Math.min(countInStock, 20)
-                  const canIncrease = Number(item.qty) < maxQty
-                  const canDecrease = Number(item.qty) > 1
+                {uniqueCartItems.map((item) => {
+                  const itemKey = item.product?._id || item.product || item._id
+                  const productQuantity =
+                    item.quantity ?? item.product?.quantity ?? 20
+                  const maxQty = Math.min(productQuantity, 20)
+                  const canIncrease =
+                    Number(item.qty) < maxQty && !updatingItems.has(itemKey)
+                  const canDecrease =
+                    Number(item.qty) > 1 && !updatingItems.has(itemKey)
                   const hasDiscount = isDiscountActive(item.discount)
                   const originalPrice = hasDiscount
-                    ? getOriginalPrice(item.price, item.discount).toFixed(2)
-                    : item.price.toFixed(2)
+                    ? getOriginalPrice(item.price, item.discount)
+                    : item.price
 
                   return (
                     <div
-                      key={item._id}
+                      key={item.uniqueKey || `${itemKey}-${item._id}`}
                       className='flex flex-col sm:flex-row items-start sm:items-center p-6 border-b last:border-b-0'
                       style={{ borderColor: 'rgba(211, 190, 249, 0.2)' }}
                     >
@@ -241,7 +289,7 @@ const Cart = () => {
 
                       <div className='flex-1 sm:ml-6'>
                         <Link
-                          to={`/product/${item.product}`}
+                          to={`/product/${itemKey}`}
                           className='text-lg font-medium hover:text-purple-300'
                           style={{ color: 'rgba(255, 255, 255, 0.9)' }}
                         >
@@ -260,23 +308,20 @@ const Cart = () => {
                                 className='text-xl font-bold'
                                 style={{ color: 'rgba(74, 222, 128, 0.9)' }}
                               >
-                                ${item.price.toFixed(2)}
+                                ₨ {item.price}
                               </span>
                               <span
                                 className='text-sm line-through'
                                 style={{ color: 'rgba(255, 255, 255, 0.5)' }}
                               >
-                                ${originalPrice}
+                                ₨ {originalPrice}
                               </span>
                               <span
                                 className='text-sm'
                                 style={{ color: 'rgba(74, 222, 128, 0.9)' }}
                               >
-                                You save: $
-                                {(
-                                  (originalPrice - item.price) *
-                                  item.qty
-                                ).toFixed(2)}
+                                You save: ₨
+                                {(originalPrice - item.price) * item.qty}
                               </span>
                             </div>
                           ) : (
@@ -284,23 +329,24 @@ const Cart = () => {
                               className='text-xl font-bold'
                               style={{ color: 'rgba(211, 190, 249, 0.9)' }}
                             >
-                              ${item.price.toFixed(2)}
+                              ₨ {item.price}
                             </span>
                           )}
                         </div>
                       </div>
 
                       <div className='flex items-center justify-between w-full sm:w-auto mt-4 sm:mt-0'>
+                        {/* Updated quantity controls with enhanced disabled UI */}
                         <div className='flex items-center mr-6 relative'>
                           <button
                             onClick={() =>
                               updateQuantityHandler(item, Number(item.qty) - 1)
                             }
                             disabled={!canDecrease || isAddingToCart}
-                            className={`p-2 rounded-full ${
+                            className={`p-2 rounded-full relative ${
                               canDecrease
                                 ? 'hover:bg-purple-900'
-                                : 'cursor-not-allowed'
+                                : 'cursor-not-allowed opacity-50'
                             }`}
                             style={{
                               color: canDecrease
@@ -312,47 +358,62 @@ const Cart = () => {
                             }}
                             aria-label='Decrease quantity'
                           >
-                            <FaMinus />
+                            {updatingItems.has(itemKey) ? (
+                              <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-purple-300'></div>
+                            ) : (
+                              <FaMinus />
+                            )}
                           </button>
+
                           <span
                             className='mx-3 text-lg font-medium w-8 text-center'
                             style={{ color: 'rgba(255, 255, 255, 0.9)' }}
                           >
                             {item.qty}
                           </span>
-                          <button
-                            onClick={() =>
-                              updateQuantityHandler(item, Number(item.qty) + 1)
-                            }
-                            disabled={!canIncrease || isAddingToCart}
-                            className={`p-2 rounded-full ${
-                              canIncrease
-                                ? 'hover:bg-purple-900'
-                                : 'cursor-not-allowed'
-                            }`}
-                            style={{
-                              color: canIncrease
-                                ? 'rgba(211, 190, 249, 0.8)'
-                                : 'rgba(211, 190, 249, 0.3)',
-                              backgroundColor: canIncrease
-                                ? 'rgba(211, 190, 249, 0.1)'
-                                : 'transparent',
-                            }}
-                            aria-label='Increase quantity'
-                          >
-                            <FaPlus />
-                          </button>
-                          {!canIncrease && (
-                            <div className='absolute right-0 top-0 text-xs text-red-500'>
-                              (max)
-                            </div>
-                          )}
+
+                          <div className='relative group'>
+                            <button
+                              onClick={() =>
+                                updateQuantityHandler(
+                                  item,
+                                  Number(item.qty) + 1
+                                )
+                              }
+                              disabled={!canIncrease || isAddingToCart}
+                              className={`p-2 rounded-full relative ${
+                                canIncrease
+                                  ? 'hover:bg-purple-900'
+                                  : 'cursor-not-allowed opacity-50'
+                              }`}
+                              style={{
+                                color: canIncrease
+                                  ? 'rgba(211, 190, 249, 0.8)'
+                                  : 'rgba(211, 190, 249, 0.3)',
+                                backgroundColor: canIncrease
+                                  ? 'rgba(211, 190, 249, 0.1)'
+                                  : 'transparent',
+                              }}
+                              aria-label='Increase quantity'
+                            >
+                              {updatingItems.has(itemKey) ? (
+                                <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-purple-300'></div>
+                              ) : (
+                                <FaPlus />
+                              )}
+                            </button>
+                            {!canIncrease && !updatingItems.has(itemKey) && (
+                              <div className='absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2'>
+                                Max quantity reached
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         <button
                           className='transition-colors p-2 rounded-full hover:bg-red-900/30'
                           style={{ color: 'rgba(255, 120, 120, 0.8)' }}
-                          onClick={() => removeFromCartHandler(item._id)}
+                          onClick={() => removeFromCartHandler(item)}
                           disabled={isRemovingFromCart}
                           aria-label='Remove item'
                         >
@@ -400,7 +461,7 @@ const Cart = () => {
                   >
                     <span className='text-lg'>Items:</span>
                     <span className='text-lg'>
-                      {cartItems.reduce((acc, item) => acc + item.qty, 0)}
+                      {uniqueCartItems.reduce((acc, item) => acc + item.qty, 0)}
                     </span>
                   </div>
 
@@ -409,7 +470,7 @@ const Cart = () => {
                     style={{ color: 'rgba(255, 255, 255, 0.8)' }}
                   >
                     <span className='text-lg'>Subtotal:</span>
-                    <span className='text-lg'>${cart.itemsPrice}</span>
+                    <span className='text-lg'>₨ {cart.itemsPrice}</span>
                   </div>
 
                   {totalSavings > 0 && (
@@ -420,9 +481,7 @@ const Cart = () => {
                       <span className='text-lg flex items-center'>
                         <FaPercentage className='mr-1' /> Total Savings:
                       </span>
-                      <span className='text-lg'>
-                        -${totalSavings.toFixed(2)}
-                      </span>
+                      <span className='text-lg'>-₨{totalSavings}</span>
                     </div>
                   )}
 
@@ -431,7 +490,7 @@ const Cart = () => {
                     style={{ color: 'rgba(255, 255, 255, 0.8)' }}
                   >
                     <span className='text-lg'>Shipping:</span>
-                    <span className='text-lg'>${cart.shippingPrice}</span>
+                    <span className='text-lg'>₨ {cart.shippingPrice}</span>
                   </div>
 
                   <div
@@ -439,7 +498,7 @@ const Cart = () => {
                     style={{ color: 'rgba(255, 255, 255, 0.8)' }}
                   >
                     <span className='text-lg'>Tax:</span>
-                    <span className='text-lg'>${cart.taxPrice}</span>
+                    <span className='text-lg'>₨ {cart.taxPrice}</span>
                   </div>
 
                   <div
@@ -450,31 +509,31 @@ const Cart = () => {
                     }}
                   >
                     <span>Total:</span>
-                    <span>${cart.totalPrice}</span>
+                    <span>₨ {cart.totalPrice}</span>
                   </div>
                 </div>
 
                 <button
                   className={`py-3 px-6 rounded-lg font-medium w-full transition-all ${
-                    cartItems.length === 0
+                    uniqueCartItems.length === 0
                       ? 'opacity-50 cursor-not-allowed'
                       : ''
                   }`}
                   style={{
                     backgroundColor:
-                      cartItems.length === 0
+                      uniqueCartItems.length === 0
                         ? 'rgba(211, 190, 249, 0.4)'
                         : 'rgba(211, 190, 249, 0.9)',
                     color: 'rgb(7, 10, 19)',
                     boxShadow:
-                      cartItems.length === 0
+                      uniqueCartItems.length === 0
                         ? 'none'
                         : '0 4px 12px rgba(211, 190, 249, 0.5)',
                     transform:
-                      cartItems.length === 0 ? 'none' : 'translateY(0)',
+                      uniqueCartItems.length === 0 ? 'none' : 'translateY(0)',
                   }}
                   onMouseOver={(e) => {
-                    if (cartItems.length !== 0) {
+                    if (uniqueCartItems.length !== 0) {
                       e.currentTarget.style.backgroundColor =
                         'rgba(211, 190, 249, 1)'
                       e.currentTarget.style.boxShadow =
@@ -483,7 +542,7 @@ const Cart = () => {
                     }
                   }}
                   onMouseOut={(e) => {
-                    if (cartItems.length !== 0) {
+                    if (uniqueCartItems.length !== 0) {
                       e.currentTarget.style.backgroundColor =
                         'rgba(211, 190, 249, 0.9)'
                       e.currentTarget.style.boxShadow =
@@ -491,7 +550,7 @@ const Cart = () => {
                       e.currentTarget.style.transform = 'translateY(0)'
                     }
                   }}
-                  disabled={cartItems.length === 0}
+                  disabled={uniqueCartItems.length === 0}
                   onClick={checkoutHandler}
                 >
                   Proceed To Checkout

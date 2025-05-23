@@ -16,6 +16,7 @@ const ProductCard = ({ p }) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { userInfo } = useSelector((state) => state.auth)
+  const { cartItems } = useSelector((state) => state.cart)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
 
   const [addToCartApi] = useAddToCartMutation()
@@ -29,12 +30,28 @@ const ProductCard = ({ p }) => {
     : null
   // Check if low stock or out of stock badge is present
   const hasStockBadge = p.quantity <= 5
+  // Find the current quantity in cart for this product
+  const cartItem = cartItems.find(
+    (item) => (item.product?._id || item.product) === p._id
+  )
+  const currentQty = cartItem ? cartItem.qty : 0
+  // Check if max quantity is reached
+  const maxQty = Math.min(p.quantity, 20) // Assuming max 20 as in Cart component
+  const isMaxQtyReached = currentQty >= maxQty
 
-  const addToCartHandler = async (product, qty) => {
+  const addToCartHandler = async (product) => {
     if (product.quantity <= 0) {
       toast.error('This item is currently out of stock', {
         position: 'top-right',
         autoClose: 3000,
+      })
+      return
+    }
+
+    if (isMaxQtyReached) {
+      toast.info('Maximum quantity reached', {
+        position: 'top-right',
+        autoClose: 2000,
       })
       return
     }
@@ -51,7 +68,7 @@ const ProductCard = ({ p }) => {
         name: product.name,
         image: product.image,
         price: hasDiscount ? discountedPrice : product.price,
-        qty,
+        qty: currentQty + 1, // Increment quantity
         product: product._id,
         countInStock: product.quantity,
         discount: hasDiscount ? product.discount : null,
@@ -62,7 +79,7 @@ const ProductCard = ({ p }) => {
         dispatch(setCart(updatedCartData))
       }
 
-      toast.success('Item added successfully', {
+      toast.success(`Added ${product.name} to cart`, {
         position: 'top-right',
         autoClose: 2000,
       })
@@ -139,26 +156,13 @@ const ProductCard = ({ p }) => {
           <div className='ml-2 whitespace-nowrap text-right'>
             {hasDiscount ? (
               <>
-                <p className='font-bold text-green-400'>
-                  {discountedPrice?.toLocaleString('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                  })}
-                </p>
+                <p className='font-bold text-green-400'>₨ {discountedPrice}</p>
                 <p className='text-gray-400 text-sm line-through'>
-                  {p?.price?.toLocaleString('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                  })}
+                  ₨ {p?.price}
                 </p>
               </>
             ) : (
-              <p className='font-bold text-[rgb(211,190,249)]'>
-                {p?.price?.toLocaleString('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                })}
-              </p>
+              <p className='font-bold text-[rgb(211,190,249)]'>₨ {p?.price}</p>
             )}
           </div>
         </div>
@@ -190,45 +194,75 @@ const ProductCard = ({ p }) => {
             </svg>
           </Link>
 
-          {/* Conditional rendering of Add to Cart button based on stock */}
-          <button
-            className={`p-3 rounded-full transition-all duration-300 ${
-              p.quantity <= 0
-                ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                : isAddingToCart
-                ? 'bg-gray-700 text-gray-500 cursor-wait'
-                : 'bg-[rgba(211,190,249,0.2)] hover:bg-[rgba(211,190,249,0.3)] text-[rgb(211,190,249)]'
-            }`}
-            onClick={() => addToCartHandler(p, 1)}
-            disabled={p.quantity <= 0 || isAddingToCart}
-            aria-label={p.quantity <= 0 ? 'Out of stock' : 'Add to cart'}
-            title={p.quantity <= 0 ? 'Out of stock' : 'Add to cart'}
-          >
-            {isAddingToCart ? (
-              <svg
-                className='animate-spin h-5 w-5 text-[rgba(211,190,249,0.7)]'
-                xmlns='http://www.w3.org/2000/svg'
-                fill='none'
-                viewBox='0 0 24 24'
-              >
-                <circle
-                  className='opacity-25'
-                  cx='12'
-                  cy='12'
-                  r='10'
-                  stroke='currentColor'
-                  strokeWidth='4'
-                ></circle>
-                <path
-                  className='opacity-75'
-                  fill='currentColor'
-                  d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                ></path>
-              </svg>
-            ) : (
-              <AiOutlineShoppingCart size={22} />
+          {/* Conditional rendering of Add to Cart button with quantity display */}
+          <div className='relative group'>
+            <button
+              className={`p-3 rounded-full transition-all duration-300 flex items-center justify-center ${
+                p.quantity <= 0 || isMaxQtyReached
+                  ? 'bg-gray-800 text-gray-600 cursor-not-allowed opacity-50'
+                  : isAddingToCart
+                  ? 'bg-gray-700 text-gray-500 cursor-wait'
+                  : 'bg-[rgba(211,190,249,0.2)] hover:bg-[rgba(211,190,249,0.3)] text-[rgb(211,190,249)]'
+              }`}
+              onClick={() => addToCartHandler(p)}
+              disabled={p.quantity <= 0 || isAddingToCart || isMaxQtyReached}
+              aria-label={
+                p.quantity <= 0
+                  ? 'Out of stock'
+                  : isMaxQtyReached
+                  ? 'Maximum quantity reached'
+                  : currentQty > 0
+                  ? `In cart: ${currentQty}`
+                  : 'Add to cart'
+              }
+              title={
+                p.quantity <= 0
+                  ? 'Out of stock'
+                  : isMaxQtyReached
+                  ? 'Maximum quantity reached'
+                  : currentQty > 0
+                  ? `In cart: ${currentQty}`
+                  : 'Add to cart'
+              }
+            >
+              {isAddingToCart ? (
+                <svg
+                  className='animate-spin h-5 w-5 text-[rgba(211,190,249,0.7)]'
+                  xmlns='http://www.w3.org/2000/svg'
+                  fill='none'
+                  viewBox='0 0 24 24'
+                >
+                  <circle
+                    className='opacity-25'
+                    cx='12'
+                    cy='12'
+                    r='10'
+                    stroke='currentColor'
+                    strokeWidth='4'
+                  ></circle>
+                  <path
+                    className='opacity-75'
+                    fill='currentColor'
+                    d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                  ></path>
+                </svg>
+              ) : (
+                <>
+                  <AiOutlineShoppingCart size={22} />
+                  {currentQty > 0 && (
+                    <span className='ml-1 text-xs font-medium'>
+                      {currentQty}
+                    </span>
+                  )}
+                </>
+              )}
+            </button>
+            {(p.quantity <= 0 || isMaxQtyReached) && !isAddingToCart && (
+              <div className='absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2'>
+                {p.quantity <= 0 ? 'Out of stock' : 'Maximum quantity reached'}
+              </div>
             )}
-          </button>
+          </div>
         </div>
       </div>
     </div>

@@ -24,10 +24,12 @@ const Shop = () => {
 
   const categoriesQuery = useFetchCategoriesQuery()
   const [priceFilter, setPriceFilter] = useState('')
-  const [minPrice, setMinPrice] = useState('') // New state for minimum price
-  const [maxPrice, setMaxPrice] = useState('') // New state for maximum price
+  const [minPrice, setMinPrice] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [productsPerPage] = useState(8)
 
   const filteredProductsQuery = useGetFilteredProductsQuery({
     checked,
@@ -43,21 +45,17 @@ const Shop = () => {
   useEffect(() => {
     if (!checked.length || !radio.length) {
       if (!filteredProductsQuery.isLoading) {
-        // Filter products based on checked categories, price filter, price range, and search term
         const filteredProducts = filteredProductsQuery.data.filter(
           (product) => {
-            // Exact price filter
             const matchesExactPrice =
               priceFilter === '' ||
               product.price.toString().includes(priceFilter) ||
               product.price === parseInt(priceFilter, 10)
 
-            // Price range filter
             const matchesPriceRange =
               (minPrice === '' || product.price >= parseFloat(minPrice)) &&
               (maxPrice === '' || product.price <= parseFloat(maxPrice))
 
-            // Search term filter
             const matchesSearch =
               searchTerm === '' ||
               product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,6 +71,7 @@ const Shop = () => {
         )
 
         dispatch(setProducts(filteredProducts))
+        setCurrentPage(1) // Reset to first page when filters change
       }
     }
   }, [
@@ -91,6 +90,7 @@ const Shop = () => {
       (product) => product.brand === brand
     )
     dispatch(setProducts(productsByBrand))
+    setCurrentPage(1) // Reset to first page when brand changes
   }
 
   const handleCheck = (value, id) => {
@@ -100,7 +100,6 @@ const Shop = () => {
     dispatch(setChecked(updatedChecked))
   }
 
-  // Add "All Brands" option to uniqueBrands
   const uniqueBrands = [
     ...Array.from(
       new Set(
@@ -135,23 +134,37 @@ const Shop = () => {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
-    // Search is already applied via the useEffect
   }
 
   const resetFilters = () => {
     setPriceFilter('')
-    setMinPrice('') // Reset min price
-    setMaxPrice('') // Reset max price
+    setMinPrice('')
+    setMaxPrice('')
     setSearchTerm('')
-    dispatch(setChecked([])) // Reset category filters
-    dispatch(setProducts(filteredProductsQuery.data || [])) // Reset to all products
+    dispatch(setChecked([]))
+    dispatch(setProducts(filteredProductsQuery.data || []))
+    setCurrentPage(1) // Reset to first page when filters are reset
   }
 
   const toggleFilter = () => {
     setIsFilterOpen(!isFilterOpen)
   }
 
-  // Custom styles based on the specified color theme
+  // Pagination logic
+  const indexOfLastProduct = currentPage * productsPerPage
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage
+  const currentProducts = products.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  )
+  const totalPages = Math.ceil(products.length / productsPerPage)
+
+  const paginate = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber)
+    }
+  }
+
   const styles = {
     primaryBg: 'rgb(7, 10, 19)',
     secondaryBg: 'rgb(13, 17, 30)',
@@ -165,7 +178,6 @@ const Shop = () => {
   return (
     <div style={{ backgroundColor: styles.primaryBg }} className='min-h-screen'>
       <div className='container mx-auto px-4 py-8'>
-        {/* Mobile filter toggle */}
         <button
           className='md:hidden w-full py-3 px-4 rounded-lg mb-4 flex items-center justify-center gap-2 shadow-lg transition-all duration-300'
           style={{
@@ -193,7 +205,6 @@ const Shop = () => {
         </button>
 
         <div className='flex flex-col md:flex-row gap-6'>
-          {/* Filters Section */}
           <div
             className={`${
               isFilterOpen ? 'block' : 'hidden'
@@ -203,7 +214,6 @@ const Shop = () => {
               className='rounded-lg shadow-xl overflow-hidden sticky top-4'
               style={{ backgroundColor: styles.secondaryBg }}
             >
-              {/* Search */}
               <div
                 className='border-b'
                 style={{ borderColor: 'rgba(211, 190, 249, 0.2)' }}
@@ -274,7 +284,6 @@ const Shop = () => {
                 </div>
               </div>
 
-              {/* Categories */}
               <div
                 className='border-b'
                 style={{ borderColor: 'rgba(211, 190, 249, 0.2)' }}
@@ -313,7 +322,6 @@ const Shop = () => {
                 </div>
               </div>
 
-              {/* Brands */}
               <div
                 className='border-b'
                 style={{ borderColor: 'rgba(255, 255, 255, 0.2)' }}
@@ -353,7 +361,6 @@ const Shop = () => {
                 </div>
               </div>
 
-              {/* Price Filter */}
               <div
                 className='border-b'
                 style={{ borderColor: 'rgba(211, 190, 249, 0.2)' }}
@@ -368,7 +375,6 @@ const Shop = () => {
                   Price Filters
                 </h2>
                 <div className='p-4 space-y-4'>
-                  {/* Exact Price Filter */}
                   <div>
                     <label
                       className='block text-sm mb-2'
@@ -391,7 +397,6 @@ const Shop = () => {
                       }}
                     />
                   </div>
-                  {/* Price Range Filter */}
                   <div>
                     <label
                       className='block text-sm mb-2'
@@ -443,7 +448,6 @@ const Shop = () => {
                 </div>
               </div>
 
-              {/* Reset Button */}
               <div className='p-4'>
                 <button
                   className='w-full py-3 px-4 rounded-lg shadow-md transition-all duration-300 focus:outline-none focus:ring-2'
@@ -459,7 +463,6 @@ const Shop = () => {
             </div>
           </div>
 
-          {/* Products Grid */}
           <div className='flex-1'>
             <div
               className='rounded-lg shadow-lg p-5 mb-6'
@@ -589,13 +592,81 @@ const Shop = () => {
                 </p>
               </div>
             ) : (
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
-                {products?.map((p) => (
-                  <div key={p._id} className='h-full'>
-                    <ProductCard p={p} />
+              <>
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+                  {currentProducts?.map((p) => (
+                    <div key={p._id} className='h-full'>
+                      <ProductCard p={p} />
+                    </div>
+                  ))}
+                </div>
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div
+                    className='mt-8 flex flex-wrap justify-center gap-2'
+                    style={{ color: styles.lightText }}
+                  >
+                    <button
+                      onClick={() => paginate(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className='px-4 py-2 rounded-lg transition-all duration-300'
+                      style={{
+                        backgroundColor:
+                          currentPage === 1
+                            ? 'rgba(211, 190, 249, 0.2)'
+                            : styles.accentColor,
+                        color:
+                          currentPage === 1
+                            ? styles.mediumText
+                            : styles.primaryBg,
+                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      Previous
+                    </button>
+                    {Array.from({ length: totalPages }, (_, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => paginate(index + 1)}
+                        className='px-4 py-2 rounded-lg transition-all duration-300'
+                        style={{
+                          backgroundColor:
+                            currentPage === index + 1
+                              ? styles.accentColor
+                              : styles.secondaryBg,
+                          color:
+                            currentPage === index + 1
+                              ? styles.primaryBg
+                              : styles.lightText,
+                        }}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => paginate(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className='px-4 py-2 rounded-lg transition-all duration-300'
+                      style={{
+                        backgroundColor:
+                          currentPage === totalPages
+                            ? 'rgba(211, 190, 249, 0.2)'
+                            : styles.accentColor,
+                        color:
+                          currentPage === totalPages
+                            ? styles.mediumText
+                            : styles.primaryBg,
+                        cursor:
+                          currentPage === totalPages
+                            ? 'not-allowed'
+                            : 'pointer',
+                      }}
+                    >
+                      Next
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -20,12 +20,22 @@ const OrderHistoryScreen = () => {
   const [cancelReason, setCancelReason] = useState('')
   const [image, setImage] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
+  const ordersPerPage = 5
 
-  // For filtering and sorting
   const [filterStatus, setFilterStatus] = useState('all')
   const [sortOrder, setSortOrder] = useState('newest')
 
-  // Handle payment proof upload
+  // Custom styles matching the Login component
+  const styles = {
+    backgroundColor: 'rgb(7, 10, 19)',
+    accentColor: 'rgb(211, 190, 249)',
+    darkAccent: 'rgb(161, 140, 199)',
+    darkBg: 'rgb(13, 17, 30)',
+    lighterBg: 'rgb(20, 25, 40)',
+  }
+
   const uploadFileHandler = async (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -35,7 +45,6 @@ const OrderHistoryScreen = () => {
     setUploading(true)
 
     try {
-      // Simulate file upload since we're not implementing the actual FileUpload component
       setTimeout(() => {
         const fileUrl = URL.createObjectURL(file)
         setImage(fileUrl)
@@ -68,7 +77,6 @@ const OrderHistoryScreen = () => {
     }
   }
 
-  // Handle order cancellation
   const handleCancelOrder = async () => {
     try {
       await cancelOrder({
@@ -85,11 +93,18 @@ const OrderHistoryScreen = () => {
     }
   }
 
-  // Filter orders based on status
   const getFilteredOrders = () => {
     if (!orders) return []
 
     let filtered = [...orders]
+
+    if (searchQuery) {
+      filtered = filtered.filter((order) =>
+        order.orderItems.some((item) =>
+          item.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      )
+    }
 
     if (filterStatus === 'paid') {
       filtered = filtered.filter((order) => order.isPaid)
@@ -103,7 +118,6 @@ const OrderHistoryScreen = () => {
       filtered = filtered.filter((order) => order.isCancelled)
     }
 
-    // Sort orders
     if (sortOrder === 'newest') {
       filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     } else if (sortOrder === 'oldest') {
@@ -111,66 +125,63 @@ const OrderHistoryScreen = () => {
     } else if (sortOrder === 'highest') {
       filtered.sort((a, b) => b.totalPrice - a.totalPrice)
     } else if (sortOrder === 'lowest') {
-      filtered.sort((a, b) => a.totalPrice - a.totalPrice)
+      filtered.sort((a, b) => a.totalPrice - b.totalPrice)
     }
 
     return filtered
   }
 
-  // Helper function to render the appropriate badge based on order status
-  const renderStatusBadge = (order) => {
-    if (order.isCancelled) {
-      return (
-        <span
-          className='px-2 py-1 rounded text-xs font-medium'
-          style={{ backgroundColor: 'rgba(220, 38, 38, 0.8)', color: 'white' }}
-        >
-          Cancelled
-        </span>
-      )
-    } else if (order.isDelivered) {
-      return (
-        <span
-          className='px-2 py-1 rounded text-xs font-medium'
-          style={{ backgroundColor: 'rgba(16, 185, 129, 0.8)', color: 'white' }}
-        >
-          Delivered
-        </span>
-      )
-    } else if (order.isPaid) {
-      return (
-        <span
-          className='px-2 py-1 rounded text-xs font-medium'
-          style={{ backgroundColor: 'rgba(59, 130, 246, 0.8)', color: 'white' }}
-        >
-          Processing
-        </span>
-      )
-    } else if (order.paymentProofImage) {
-      return (
-        <span
-          className='px-2 py-1 rounded text-xs font-medium'
-          style={{ backgroundColor: 'rgba(245, 158, 11, 0.8)', color: 'white' }}
-        >
-          Payment Proof Uploaded
-        </span>
-      )
-    } else {
-      return (
-        <span
-          className='px-2 py-1 rounded text-xs font-medium'
-          style={{
-            backgroundColor: 'rgba(156, 163, 175, 0.8)',
-            color: 'white',
-          }}
-        >
-          Awaiting Payment
-        </span>
-      )
+  const filteredOrders = getFilteredOrders()
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage)
+  const indexOfLastOrder = currentPage * ordersPerPage
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
+  const currentOrders = filteredOrders.slice(
+    indexOfFirstOrder,
+    indexOfLastOrder
+  )
+
+  const paginate = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber)
     }
   }
 
-  // Helper function to get product names from order items
+  const renderStatusBadge = (order) => {
+    const badgeStyles = {
+      cancelled: { backgroundColor: 'rgba(220, 38, 38, 0.8)', color: 'white' },
+      delivered: { backgroundColor: 'rgba(16, 185, 129, 0.8)', color: 'white' },
+      processing: {
+        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+        color: 'white',
+      },
+      paymentProof: {
+        backgroundColor: 'rgba(245, 158, 11, 0.8)',
+        color: 'white',
+      },
+      awaiting: { backgroundColor: 'rgba(156, 163, 175, 0.8)', color: 'white' },
+    }
+
+    let status
+    if (order.isCancelled) status = 'cancelled'
+    else if (order.isDelivered) status = 'delivered'
+    else if (order.isPaid) status = 'processing'
+    else if (order.paymentProofImage) status = 'paymentProof'
+    else status = 'awaiting'
+
+    return (
+      <span
+        className='px-3 py-1 rounded text-sm font-medium'
+        style={badgeStyles[status]}
+      >
+        {status === 'cancelled' && 'Cancelled'}
+        {status === 'delivered' && 'Delivered'}
+        {status === 'processing' && 'Processing'}
+        {status === 'paymentProof' && 'Payment Proof Uploaded'}
+        {status === 'awaiting' && 'Payment due'}
+      </span>
+    )
+  }
+
   const getProductNames = (order) => {
     if (!order.orderItems || order.orderItems.length === 0) return 'No items'
     return order.orderItems.map((item) => item.name).join(', ')
@@ -178,13 +189,13 @@ const OrderHistoryScreen = () => {
 
   return (
     <div
-      style={{ backgroundColor: 'rgb(7, 10, 19)', minHeight: '100vh' }}
-      className='py-8'
+      className='min-h-screen py-8'
+      style={{ backgroundColor: styles.backgroundColor }}
     >
       <div className='container mx-auto px-4 max-w-6xl'>
         <h2
-          className='text-2xl font-semibold mb-6'
-          style={{ color: 'rgba(211, 190, 249, 0.9)' }}
+          className='text-3xl font-bold mb-6'
+          style={{ color: styles.accentColor }}
         >
           My Order History
         </h2>
@@ -199,23 +210,48 @@ const OrderHistoryScreen = () => {
           </Message>
         ) : (
           <>
-            <div className='grid md:grid-cols-2 gap-4 mb-6'>
-              {/* Filter dropdown */}
-              <div className='mb-4'>
+            <div className='grid md:grid-cols-3 gap-4 mb-6'>
+              <div>
                 <label
-                  className='block mb-2 text-sm font-medium'
-                  style={{ color: 'rgba(211, 190, 249, 0.9)' }}
+                  className='block mb-1 text-sm font-medium'
+                  style={{ color: styles.accentColor }}
+                >
+                  Search by Product
+                </label>
+                <input
+                  type='text'
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setCurrentPage(1)
+                  }}
+                  placeholder='Search by product name...'
+                  className='w-full p-3 rounded-lg border text-sm focus:outline-none focus:ring-2'
+                  style={{
+                    backgroundColor: styles.lighterBg,
+                    borderColor: 'rgba(211, 190, 249, 0.3)',
+                    color: 'white',
+                  }}
+                />
+              </div>
+              <div>
+                <label
+                  className='block mb-1 text-sm font-medium'
+                  style={{ color: styles.accentColor }}
                 >
                   Filter by Status
                 </label>
                 <select
                   value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className='w-full p-2.5 rounded-lg border text-sm outline-none'
+                  onChange={(e) => {
+                    setFilterStatus(e.target.value)
+                    setCurrentPage(1)
+                  }}
+                  className='w-full p-3 rounded-lg border text-sm focus:outline-none focus:ring-2'
                   style={{
-                    backgroundColor: 'rgba(15, 20, 35, 0.8)',
-                    color: 'rgba(255, 255, 255, 0.9)',
-                    borderColor: 'rgba(211, 190, 249, 0.2)',
+                    backgroundColor: styles.lighterBg,
+                    borderColor: 'rgba(211, 190, 249, 0.3)',
+                    color: 'white',
                   }}
                 >
                   <option value='all'>All Orders</option>
@@ -226,23 +262,24 @@ const OrderHistoryScreen = () => {
                   <option value='cancelled'>Cancelled</option>
                 </select>
               </div>
-
-              {/* Sort dropdown */}
-              <div className='mb-4'>
+              <div>
                 <label
-                  className='block mb-2 text-sm font-medium'
-                  style={{ color: 'rgba(211, 190, 249, 0.9)' }}
+                  className='block mb-1 text-sm font-medium'
+                  style={{ color: styles.accentColor }}
                 >
                   Sort By
                 </label>
                 <select
                   value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value)}
-                  className='w-full p-2.5 rounded-lg border text-sm outline-none'
+                  onChange={(e) => {
+                    setSortOrder(e.target.value)
+                    setCurrentPage(1)
+                  }}
+                  className='w-full p-3 rounded-lg border text-sm focus:outline-none focus:ring-2'
                   style={{
-                    backgroundColor: 'rgba(15, 20, 35, 0.8)',
-                    color: 'rgba(255, 255, 255, 0.9)',
-                    borderColor: 'rgba(211, 190, 249, 0.2)',
+                    backgroundColor: styles.lighterBg,
+                    borderColor: 'rgba(211, 190, 249, 0.3)',
+                    color: 'white',
                   }}
                 >
                   <option value='newest'>Newest First</option>
@@ -253,78 +290,52 @@ const OrderHistoryScreen = () => {
               </div>
             </div>
 
-            {getFilteredOrders().length === 0 ? (
-              <div
-                className='mt-8 p-6 rounded-lg shadow-lg'
-                style={{
-                  backgroundColor: 'rgba(15, 20, 35, 0.8)',
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  border: '1px solid rgba(211, 190, 249, 0.2)',
-                }}
-              >
-                No orders found
-              </div>
-            ) : (
-              <div
-                className='mt-8 overflow-x-auto rounded-lg shadow-lg border'
-                style={{
-                  backgroundColor: 'rgba(15, 20, 35, 0.8)',
-                  borderColor: 'rgba(211, 190, 249, 0.2)',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-                }}
-              >
-                <table className='w-full border-collapse'>
-                  <thead>
-                    <tr
-                      className='border-b'
-                      style={{
-                        borderColor: 'rgba(211, 190, 249, 0.2)',
-                        backgroundColor: 'rgba(7, 10, 19, 0.6)',
-                      }}
-                    >
+            <div
+              className='mt-8 overflow-x-auto rounded-lg shadow-lg'
+              style={{
+                backgroundColor: styles.darkBg,
+                borderColor: 'rgba(211, 190, 249, 0.2)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+              }}
+            >
+              <table className='w-full border-collapse'>
+                <thead>
+                  <tr
+                    className='border-b'
+                    style={{
+                      borderColor: 'rgba(211, 190, 249, 0.2)',
+                      backgroundColor: styles.backgroundColor,
+                    }}
+                  >
+                    {[
+                      'ORDER ID',
+                      'DATE',
+                      'PRODUCTS',
+                      'TOTAL',
+                      'STATUS',
+                      'ACTIONS',
+                    ].map((header, index) => (
                       <th
-                        className='px-4 py-3 text-left'
-                        style={{ color: 'rgba(211, 190, 249, 0.9)' }}
+                        key={index}
+                        className='px-6 py-4 text-left text-sm font-medium'
+                        style={{ color: styles.accentColor, width: '16.67%' }}
                       >
-                        ORDER ID
+                        {header}
                       </th>
-                      <th
-                        className='px-4 py-3 text-left'
-                        style={{ color: 'rgba(211, 190, 249, 0.9)' }}
-                      >
-                        DATE
-                      </th>
-                      <th
-                        className='px-4 py-3 text-left'
-                        style={{ color: 'rgba(211, 190, 249, 0.9)' }}
-                      >
-                        PRODUCTS
-                      </th>
-                      <th
-                        className='px-4 py-3 text-left'
-                        style={{ color: 'rgba(211, 190, 249, 0.9)' }}
-                      >
-                        TOTAL
-                      </th>
-                      <th
-                        className='px-4 py-3 text-left'
-                        style={{ color: 'rgba(211, 190, 249, 0.9)' }}
-                      >
-                        STATUS
-                      </th>
-                      <th
-                        className='px-4 py-3 text-left'
-                        style={{ color: 'rgba(211, 190, 249, 0.9)' }}
-                      >
-                        ACTIONS
-                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan='6' className='p-6 text-center text-gray-300'>
+                        No orders found
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {getFilteredOrders().map((order, index) => (
+                  ) : (
+                    currentOrders.map((order, index) => (
                       <tr
                         key={order._id}
-                        className={index % 2 === 0 ? '' : 'bg-opacity-10'}
                         style={{
                           backgroundColor:
                             index % 2 === 0
@@ -332,112 +343,300 @@ const OrderHistoryScreen = () => {
                               : 'rgba(211, 190, 249, 0.05)',
                         }}
                       >
-                        <td
-                          className='p-4'
-                          style={{ color: 'rgba(255, 255, 255, 0.9)' }}
-                        >
-                          {order._id}
-                        </td>
-                        <td
-                          className='p-4'
-                          style={{ color: 'rgba(255, 255, 255, 0.9)' }}
-                        >
+                        <td className='p-6 text-white'>{order._id}</td>
+                        <td className='p-6 text-white'>
                           {order.createdAt.substring(0, 10)}
                         </td>
-                        <td
-                          className='p-4'
-                          style={{ color: 'rgba(255, 255, 255, 0.9)' }}
-                        >
+                        <td className='p-6 text-white'>
                           {getProductNames(order)}
                         </td>
-                        <td
-                          className='p-4'
-                          style={{ color: 'rgba(255, 255, 255, 0.9)' }}
-                        >
-                          ${order.totalPrice}
-                        </td>
-                        <td className='p-4'>{renderStatusBadge(order)}</td>
-                        <td className='p-4'>
-                          <div className='space-y-2'>
+                        <td className='p-6 text-white'>${order.totalPrice}</td>
+                        <td className='p-6'>{renderStatusBadge(order)}</td>
+                        <td className='p-6'>
+                          <div className='md:flex md:flex-col md:space-y-2 hidden'>
                             <Link to={`/order/${order._id}`}>
                               <button
-                                className='w-full text-center py-2 px-4 rounded text-sm transition-all'
+                                className='w-full py-2 px-3 rounded text-sm transition-all duration-300'
                                 style={{
                                   backgroundColor: 'rgba(211, 190, 249, 0.2)',
-                                  color: 'rgba(211, 190, 249, 0.9)',
+                                  color: styles.accentColor,
                                   border: '1px solid rgba(211, 190, 249, 0.3)',
+                                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.25)',
+                                }}
+                                onMouseOver={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    styles.darkAccent
+                                  e.currentTarget.style.transform =
+                                    'translateY(-2px)'
+                                }}
+                                onMouseOut={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    'rgba(211, 190, 249, 0.2)'
+                                  e.currentTarget.style.transform =
+                                    'translateY(0)'
                                 }}
                               >
                                 Details
                               </button>
                             </Link>
-
                             {!order.isPaid &&
                               !order.isCancelled &&
                               !order.paymentProofImage && (
                                 <button
-                                  className='w-full text-center py-2 px-4 rounded text-sm transition-all'
+                                  className='w-full py-2 px-3 rounded text-sm transition-all duration-300'
                                   style={{
-                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                    color: 'rgba(59, 130, 246, 0.9)',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                    color: 'rgb(59, 130, 246)',
                                     border: '1px solid rgba(59, 130, 246, 0.3)',
+                                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.25)',
                                   }}
                                   onClick={() => {
                                     setSelectedOrder(order)
                                     setShowUploadModal(true)
                                   }}
+                                  onMouseOver={(e) => {
+                                    e.currentTarget.style.backgroundColor =
+                                      'rgba(59, 130, 246, 0.3)'
+                                    e.currentTarget.style.transform =
+                                      'translateY(-2px)'
+                                  }}
+                                  onMouseOut={(e) => {
+                                    e.currentTarget.style.backgroundColor =
+                                      'rgba(59, 130, 246, 0.2)'
+                                    e.currentTarget.style.transform =
+                                      'translateY(0)'
+                                  }}
                                 >
                                   Upload Payment
                                 </button>
                               )}
-
                             {!order.isPaid && !order.isCancelled && (
                               <button
-                                className='w-full text-center py-2 px-4 rounded text-sm transition-all'
+                                className='w-full py-2 px-3 rounded text-sm transition-all duration-300'
                                 style={{
-                                  backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                                  color: 'rgba(220, 38, 38, 0.9)',
+                                  backgroundColor: 'rgba(220, 38, 38, 0.2)',
+                                  color: 'rgb(220, 38, 38)',
                                   border: '1px solid rgba(220, 38, 38, 0.3)',
+                                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.25)',
                                 }}
                                 onClick={() => {
                                   setSelectedOrder(order)
                                   setShowCancelModal(true)
+                                }}
+                                onMouseOver={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    'rgba(220, 38, 38, 0.3)'
+                                  e.currentTarget.style.transform =
+                                    'translateY(-2px)'
+                                }}
+                                onMouseOut={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    'rgba(220, 38, 38, 0.2)'
+                                  e.currentTarget.style.transform =
+                                    'translateY(0)'
                                 }}
                               >
                                 Cancel Order
                               </button>
                             )}
                           </div>
+                          <details className='md:hidden'>
+                            <summary
+                              className='w-full py-2 px-3 rounded text-sm cursor-pointer'
+                              style={{
+                                backgroundColor: 'rgba(211, 190, 249, 0.2)',
+                                color: styles.accentColor,
+                                border: '1px solid rgba(211, 190, 249, 0.3)',
+                              }}
+                            >
+                              Actions
+                            </summary>
+                            <div className='flex flex-col space-y-2 mt-2'>
+                              <Link to={`/order/${order._id}`}>
+                                <button
+                                  className='w-full py-2 px-3 rounded text-sm'
+                                  style={{
+                                    backgroundColor: 'rgba(211, 190, 249, 0.2)',
+                                    color: styles.accentColor,
+                                    border:
+                                      '1px solid rgba(211, 190, 249, 0.3)',
+                                  }}
+                                >
+                                  Details
+                                </button>
+                              </Link>
+                              {!order.isPaid &&
+                                !order.isCancelled &&
+                                !order.paymentProofImage && (
+                                  <button
+                                    className='w-full py-2 px-3 rounded text-sm'
+                                    style={{
+                                      backgroundColor:
+                                        'rgba(59, 130, 246, 0.2)',
+                                      color: 'rgb(59, 130, 246)',
+                                      border:
+                                        '1px solid rgba(59, 130, 246, 0.3)',
+                                    }}
+                                    onClick={() => {
+                                      setSelectedOrder(order)
+                                      setShowUploadModal(true)
+                                    }}
+                                  >
+                                    Upload Payment
+                                  </button>
+                                )}
+                              {!order.isPaid && !order.isCancelled && (
+                                <button
+                                  className='w-full py-2 px-3 rounded text-sm'
+                                  style={{
+                                    backgroundColor: 'rgba(220, 38, 38, 0.2)',
+                                    color: 'rgb(220, 38, 38)',
+                                    border: '1px solid rgba(220, 38, 38, 0.3)',
+                                  }}
+                                  onClick={() => {
+                                    setSelectedOrder(order)
+                                    setShowCancelModal(true)
+                                  }}
+                                >
+                                  Cancel Order
+                                </button>
+                              )}
+                            </div>
+                          </details>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className='mt-6 flex justify-center items-center space-x-2'>
+                <button
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className='px-4 py-2 rounded text-sm transition-all duration-300'
+                  style={{
+                    backgroundColor: styles.lighterBg,
+                    color: 'white',
+                    border: '1px solid rgba(211, 190, 249, 0.3)',
+                    opacity: currentPage === 1 ? 0.5 : 1,
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    boxShadow:
+                      currentPage !== 1
+                        ? '0 4px 6px rgba(0, 0, 0, 0.25)'
+                        : 'none',
+                  }}
+                  onMouseOver={(e) => {
+                    if (currentPage !== 1) {
+                      e.currentTarget.style.backgroundColor = styles.darkAccent
+                      e.currentTarget.style.transform = 'translateY(-2px)'
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (currentPage !== 1) {
+                      e.currentTarget.style.backgroundColor = styles.lighterBg
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }
+                  }}
+                >
+                  Previous
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => paginate(page)}
+                      className='px-4 py-2 rounded text-sm transition-all duration-300'
+                      style={{
+                        backgroundColor:
+                          currentPage === page
+                            ? styles.accentColor
+                            : styles.lighterBg,
+                        color:
+                          currentPage === page
+                            ? styles.backgroundColor
+                            : 'white',
+                        border: '1px solid rgba(211, 190, 249, 0.3)',
+                        boxShadow:
+                          currentPage === page
+                            ? '0 4px 6px rgba(0, 0, 0, 0.25)'
+                            : 'none',
+                      }}
+                      onMouseOver={(e) => {
+                        if (currentPage !== page) {
+                          e.currentTarget.style.backgroundColor =
+                            styles.darkAccent
+                          e.currentTarget.style.transform = 'translateY(-2px)'
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (currentPage !== page) {
+                          e.currentTarget.style.backgroundColor =
+                            styles.lighterBg
+                          e.currentTarget.style.transform = 'translateY(0)'
+                        }
+                      }}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className='px-4 py-2 rounded text-sm transition-all duration-300'
+                  style={{
+                    backgroundColor: styles.lighterBg,
+                    color: 'white',
+                    border: '1px solid rgba(211, 190, 249, 0.3)',
+                    opacity: currentPage === totalPages ? 0.5 : 1,
+                    cursor:
+                      currentPage === totalPages ? 'not-allowed' : 'pointer',
+                    boxShadow:
+                      currentPage !== totalPages
+                        ? '0 4px 6px rgba(0, 0, 0, 0.25)'
+                        : 'none',
+                  }}
+                  onMouseOver={(e) => {
+                    if (currentPage !== totalPages) {
+                      e.currentTarget.style.backgroundColor = styles.darkAccent
+                      e.currentTarget.style.transform = 'translateY(-2px)'
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (currentPage !== totalPages) {
+                      e.currentTarget.style.backgroundColor = styles.lighterBg
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }
+                  }}
+                >
+                  Next
+                </button>
               </div>
             )}
           </>
         )}
       </div>
 
-      {/* Payment Proof Upload Modal */}
       {showUploadModal && (
         <div className='fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center'>
           <div
-            className='relative bg-opacity-100 rounded-lg shadow-lg max-w-md w-full p-6 mx-4'
+            className='relative rounded-lg max-w-md w-full p-6 mx-4'
             style={{
-              backgroundColor: 'rgba(15, 20, 35, 0.95)',
-              border: '1px solid rgba(211, 190, 249, 0.2)',
+              backgroundColor: styles.darkBg,
+              border: '1px solid rgba(211, 190, 249, 0.3)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
             }}
           >
             <div
               className='flex justify-between items-center mb-4 pb-2 border-b'
-              style={{
-                borderColor: 'rgba(211, 190, 249, 0.2)',
-              }}
+              style={{ borderColor: 'rgba(211, 190, 249, 0.2)' }}
             >
               <h3
-                className='text-xl font-semibold'
-                style={{ color: 'rgba(211, 190, 249, 0.9)' }}
+                className='text-xl font-bold'
+                style={{ color: styles.accentColor }}
               >
                 Upload Payment Proof
               </h3>
@@ -453,23 +652,23 @@ const OrderHistoryScreen = () => {
             </div>
 
             <div className='mb-4'>
-              <p className='mb-2' style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+              <p className='mb-2 text-gray-300'>
                 Order ID:{' '}
-                <span style={{ color: 'rgba(211, 190, 249, 0.9)' }}>
+                <span style={{ color: styles.accentColor }}>
                   {selectedOrder?._id}
                 </span>
               </p>
-              <p className='mb-4' style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+              <p className='mb-4 text-gray-300'>
                 Total Amount:{' '}
-                <span style={{ color: 'rgba(211, 190, 249, 0.9)' }}>
+                <span style={{ color: styles.accentColor }}>
                   ${selectedOrder?.totalPrice}
                 </span>
               </p>
 
               <div className='mb-4'>
                 <label
-                  className='block mb-2 text-sm font-medium'
-                  style={{ color: 'rgba(211, 190, 249, 0.9)' }}
+                  className='block mb-1 text-sm font-medium'
+                  style={{ color: styles.accentColor }}
                 >
                   Upload Image
                 </label>
@@ -477,11 +676,11 @@ const OrderHistoryScreen = () => {
                   type='file'
                   accept='image/*'
                   onChange={uploadFileHandler}
-                  className='block w-full text-sm rounded-lg cursor-pointer'
+                  className='block w-full text-sm rounded-lg'
                   style={{
-                    backgroundColor: 'rgba(15, 20, 35, 0.8)',
-                    color: 'rgba(255, 255, 255, 0.9)',
-                    border: '1px solid rgba(211, 190, 249, 0.2)',
+                    backgroundColor: styles.lighterBg,
+                    color: 'white',
+                    border: '1px solid rgba(211, 190, 249, 0.3)',
                     padding: '0.5rem',
                   }}
                   disabled={uploading}
@@ -489,7 +688,7 @@ const OrderHistoryScreen = () => {
                 {uploading && (
                   <p
                     className='mt-2 text-sm'
-                    style={{ color: 'rgba(211, 190, 249, 0.9)' }}
+                    style={{ color: styles.accentColor }}
                   >
                     Uploading...
                   </p>
@@ -498,10 +697,7 @@ const OrderHistoryScreen = () => {
 
               {image && (
                 <div className='mt-4'>
-                  <p
-                    className='mb-2'
-                    style={{ color: 'rgba(211, 190, 249, 0.9)' }}
-                  >
+                  <p className='mb-2' style={{ color: styles.accentColor }}>
                     Preview:
                   </p>
                   <img
@@ -520,11 +716,22 @@ const OrderHistoryScreen = () => {
                   setShowUploadModal(false)
                   setImage('')
                 }}
-                className='py-2 px-4 rounded transition-all'
+                className='py-2 px-4 rounded text-sm transition-all duration-300'
                 style={{
-                  backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                  color: 'rgba(255, 255, 255, 0.9)',
+                  backgroundColor: 'rgba(107, 114, 128, 0.2)',
+                  color: 'white',
                   border: '1px solid rgba(107, 114, 128, 0.3)',
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.25)',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    'rgba(107, 114, 128, 0.3)'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    'rgba(107, 114, 128, 0.2)'
+                  e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
                 Close
@@ -532,14 +739,30 @@ const OrderHistoryScreen = () => {
               <button
                 onClick={submitPaymentProof}
                 disabled={!image || uploading}
-                className='py-2 px-4 rounded transition-all'
+                className='py-2 px-4 rounded text-sm transition-all duration-300'
                 style={{
                   backgroundColor:
                     !image || uploading
                       ? 'rgba(211, 190, 249, 0.4)'
-                      : 'rgba(211, 190, 249, 0.9)',
-                  color: 'rgb(7, 10, 19)',
+                      : styles.accentColor,
+                  color: !image || uploading ? 'white' : styles.backgroundColor,
                   cursor: !image || uploading ? 'not-allowed' : 'pointer',
+                  boxShadow:
+                    !image || uploading
+                      ? 'none'
+                      : '0 4px 6px rgba(0, 0, 0, 0.25)',
+                }}
+                onMouseOver={(e) => {
+                  if (image && !uploading) {
+                    e.currentTarget.style.backgroundColor = styles.darkAccent
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (image && !uploading) {
+                    e.currentTarget.style.backgroundColor = styles.accentColor
+                    e.currentTarget.style.transform = 'translateY(0)'
+                  }
                 }}
               >
                 {uploading ? 'Uploading...' : 'Submit'}
@@ -549,25 +772,23 @@ const OrderHistoryScreen = () => {
         </div>
       )}
 
-      {/* Cancel Order Modal */}
       {showCancelModal && (
         <div className='fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center'>
           <div
-            className='relative bg-opacity-100 rounded-lg shadow-lg max-w-md w-full p-6 mx-4'
+            className='relative rounded-lg max-w-md w-full p-6 mx-4'
             style={{
-              backgroundColor: 'rgba(15, 20, 35, 0.95)',
-              border: '1px solid rgba(211, 190, 249, 0.2)',
+              backgroundColor: styles.darkBg,
+              border: '1px solid rgba(211, 190, 249, 0.3)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
             }}
           >
             <div
               className='flex justify-between items-center mb-4 pb-2 border-b'
-              style={{
-                borderColor: 'rgba(211, 190, 249, 0.2)',
-              }}
+              style={{ borderColor: 'rgba(211, 190, 249, 0.2)' }}
             >
               <h3
-                className='text-xl font-semibold'
-                style={{ color: 'rgba(211, 190, 249, 0.9)' }}
+                className='text-xl font-bold'
+                style={{ color: styles.accentColor }}
               >
                 Cancel Order
               </h3>
@@ -583,14 +804,13 @@ const OrderHistoryScreen = () => {
             </div>
 
             <div className='mb-4'>
-              <p className='mb-4' style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+              <p className='mb-4 text-gray-300'>
                 Are you sure you want to cancel order #{selectedOrder?._id}?
               </p>
-
               <div className='mb-4'>
                 <label
-                  className='block mb-2 text-sm font-medium'
-                  style={{ color: 'rgba(211, 190, 249, 0.9)' }}
+                  className='block mb-1 text-sm font-medium'
+                  style={{ color: styles.accentColor }}
                 >
                   Reason for cancellation
                 </label>
@@ -601,9 +821,9 @@ const OrderHistoryScreen = () => {
                   placeholder='Please provide a reason for cancellation...'
                   className='block w-full text-sm rounded-lg'
                   style={{
-                    backgroundColor: 'rgba(15, 20, 35, 0.8)',
-                    color: 'rgba(255, 255, 255, 0.9)',
-                    border: '1px solid rgba(211, 190, 249, 0.2)',
+                    backgroundColor: styles.lighterBg,
+                    color: 'white',
+                    border: '1px solid rgba(211, 190, 249, 0.3)',
                     padding: '0.5rem',
                   }}
                 />
@@ -616,21 +836,43 @@ const OrderHistoryScreen = () => {
                   setShowCancelModal(false)
                   setCancelReason('')
                 }}
-                className='py-2 px-4 rounded transition-all'
+                className='py-2 px-4 rounded text-sm transition-all duration-300'
                 style={{
-                  backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                  color: 'rgba(255, 255, 255, 0.9)',
+                  backgroundColor: 'rgba(107, 114, 128, 0.2)',
+                  color: 'white',
                   border: '1px solid rgba(107, 114, 128, 0.3)',
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.25)',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    'rgba(107, 114, 128, 0.3)'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    'rgba(107, 114, 128, 0.2)'
+                  e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
                 Close
               </button>
               <button
                 onClick={handleCancelOrder}
-                className='py-2 px-4 rounded transition-all'
+                className='py-2 px-4 rounded text-sm transition-all duration-300'
                 style={{
                   backgroundColor: 'rgba(220, 38, 38, 0.8)',
-                  color: 'rgba(255, 255, 255, 0.9)',
+                  color: 'white',
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.25)',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    'rgba(220, 38, 38, 0.9)'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    'rgba(220, 38, 38, 0.8)'
+                  e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
                 Cancel Order

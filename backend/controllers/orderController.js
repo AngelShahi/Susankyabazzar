@@ -354,6 +354,11 @@ const initializeOrderKhaltiPayment = async (req, res) => {
     const { id: orderId } = req.params
     const { website_url } = req.body
 
+    console.log('Initiating Khalti payment with params:', {
+      orderId,
+      website_url,
+    })
+
     // Validate orderId
     if (!mongoose.Types.ObjectId.isValid(orderId)) {
       console.error('Invalid order ID format:', orderId)
@@ -367,11 +372,11 @@ const initializeOrderKhaltiPayment = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' })
     }
 
-    // Log order details
-    console.log('Initializing payment for order:', {
+    console.log('Order details:', {
       orderId: order._id.toString(),
       totalPrice: order.totalPrice,
-      userId: order.user.toString(),
+      isPaid: order.isPaid,
+      paymentMethod: order.paymentMethod,
     })
 
     // Authorization check
@@ -392,6 +397,14 @@ const initializeOrderKhaltiPayment = async (req, res) => {
     }
 
     // Initialize Khalti payment
+    console.log('Calling initializeKhaltiPayment with:', {
+      amount: Math.round(parseFloat(order.totalPrice) * 100),
+      purchase_order_id: order._id.toString(),
+      purchase_order_name: `Order #${order._id}`,
+      return_url: `${process.env.BACKEND_URI}/api/orders/khalti/verify`,
+      website_url: website_url || process.env.BASE_URL,
+    })
+
     const paymentInitiate = await initializeKhaltiPayment({
       amount: Math.round(parseFloat(order.totalPrice) * 100),
       purchase_order_id: order._id.toString(),
@@ -400,12 +413,7 @@ const initializeOrderKhaltiPayment = async (req, res) => {
       website_url: website_url || process.env.BASE_URL,
     })
 
-    // Log Khalti response
-    console.log('Khalti payment initiated:', {
-      pidx: paymentInitiate.pidx,
-      purchase_order_id: order._id.toString(),
-      payment_url: paymentInitiate.payment_url,
-    })
+    console.log('Khalti payment response:', paymentInitiate)
 
     // Update order
     order.paymentResult = {
@@ -423,9 +431,11 @@ const initializeOrderKhaltiPayment = async (req, res) => {
       payment: paymentInitiate,
     })
   } catch (error) {
-    console.error('Error initializing Khalti payment:', {
+    console.error('Detailed error in initializeOrderKhaltiPayment:', {
       message: error.message,
       stack: error.stack,
+      orderId: req.params.id,
+      requestBody: req.body,
     })
     res.status(error.status || 500).json({ error: error.message })
   }
