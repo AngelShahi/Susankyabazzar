@@ -68,5 +68,4 @@ router
 router
   .route('/bulk-discount')
   .post(authenticate, authorizeAdmin, applyBulkDiscount)
-
 export default router

@@ -8,6 +8,7 @@ import {
 } from '../../redux/api/productApiSlice'
 import { useFetchCategoriesQuery } from '../../redux/api/categoryApiSlice'
 import { toast } from 'react-toastify'
+import Modal from '../../components/Modal' // Import the Modal component
 
 // Custom QuantityInput component with enhanced styling
 const QuantityInput = ({ value, onChange }) => {
@@ -68,6 +69,10 @@ const AdminProductUpdate = () => {
   // Use a ref to track initial data load
   const initialLoadComplete = useRef(false)
   const formSubmitting = useRef(false)
+
+  // State for delete modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   // RTK Query hooks
   const {
@@ -190,14 +195,13 @@ const AdminProductUpdate = () => {
   }
 
   const handleDelete = async () => {
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    setIsProcessing(true)
     try {
-      let answer = window.confirm(
-        'Are you sure you want to delete this product?'
-      )
-      if (!answer) return
-
       const result = await deleteProduct(params._id).unwrap()
-
       if (result._id) {
         toast.success(`"${result.name}" has been deleted`)
         navigate('/admin/allproductslist')
@@ -205,6 +209,9 @@ const AdminProductUpdate = () => {
     } catch (err) {
       console.error('Delete error:', err)
       toast.error(err.data?.error || 'Delete failed. Try again.')
+    } finally {
+      setIsProcessing(false)
+      setShowDeleteModal(false)
     }
   }
 
@@ -227,6 +234,37 @@ const AdminProductUpdate = () => {
               Update / Delete Product
             </h1>
           </div>
+
+          {/* Delete Modal */}
+          <Modal
+            isOpen={showDeleteModal}
+            onClose={() => setShowDeleteModal(false)}
+            title='Delete Product'
+            className='bg-[rgb(13,17,29)] border-gray-800 rounded-lg border-none'
+          >
+            <div className='space-y-4 p-4 bg-[rgb(13,17,29)] text-gray-100'>
+              <p className='text-white font-semibold'>
+                Are you sure you want to delete the product{' '}
+                <span className='text-[rgb(211,190,249)]'>{name}</span>? This
+                action cannot be undone.
+              </p>
+              <div className='flex justify-end space-x-3'>
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className='px-4 py-2 bg-gray-600 rounded-md hover:bg-gray-700 text-gray-100'
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={isProcessing}
+                  className='px-4 py-2 bg-red-600 rounded-md hover:bg-red-700 text-gray-100 disabled:opacity-50'
+                >
+                  {isProcessing ? 'Processing...' : 'Confirm Deletion'}
+                </button>
+              </div>
+            </div>
+          </Modal>
 
           <div className='p-6'>
             {/* Image Preview Section */}
@@ -442,3 +480,4 @@ const AdminProductUpdate = () => {
 }
 
 export default AdminProductUpdate
+  

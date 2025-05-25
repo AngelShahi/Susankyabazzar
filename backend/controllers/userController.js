@@ -8,7 +8,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 // in userController.js
-let tempOtpStore = {} // temp memory store, consider Redis or DB for production
+let tempOtpStore = {} // temp memory store
 
 const sendOtp = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body
@@ -575,7 +575,7 @@ const notifyUserStatusChange = asyncHandler(async (req, res) => {
         <h2>Account Deactivated</h2>
         <p>Your account has been deactivated by the administrator.</p>
         ${reason && `<p><strong>Reason:</strong> ${reason}</p>`}
-        <p>If you believe this was done in error, please contact support.</p>
+        <p>If you believe this was done in error, please contact <a href="mailto:support@example.com">support</a>.</p>
       `
 
     await sendEmail({
@@ -583,7 +583,7 @@ const notifyUserStatusChange = asyncHandler(async (req, res) => {
       subject: isActive ? 'Account Reactivated' : 'Account Deactivated',
       html: message,
     })
-
+    
     res.status(200).json({ message: 'Notification sent successfully' })
   } catch (error) {
     res.status(500)

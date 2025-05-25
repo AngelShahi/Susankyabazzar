@@ -66,7 +66,7 @@ const PlaceOrder = () => {
           postalCode: cart.shippingAddress.postalCode || '',
           country: cart.shippingAddress.country || '',
         },
-        paymentMethod: cart.paymentMethod || 'Esewa',
+        paymentMethod: cart.paymentMethod || 'khalti',
         itemsPrice: cart.itemsPrice || 0,
         shippingPrice: cart.shippingPrice || 0,
         taxPrice: cart.taxPrice || 0,

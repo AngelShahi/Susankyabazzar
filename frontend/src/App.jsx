@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { useEffect } from 'react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { useGetCartQuery } from './redux/features/cart/cartApiSlice'
 import { setCart } from './redux/features/cart/cartSlice'
 import Navigation from './pages/Auth/Navigation'
@@ -9,7 +9,14 @@ import 'react-toastify/dist/ReactToastify.css'
 
 const App = () => {
   const dispatch = useDispatch()
-  const { data: cartData, isLoading, error } = useGetCartQuery()
+  const { userInfo } = useSelector((state) => state.auth)
+  const {
+    data: cartData,
+    isLoading,
+    error,
+  } = useGetCartQuery(undefined, {
+    skip: !userInfo?.token, // Skip query if no user token
+  })
 
   useEffect(() => {
     if (cartData) {
@@ -22,16 +29,13 @@ const App = () => {
       <ToastContainer />
       <Navigation />
       <main className='py-0'>
+        {isLoading && <div className='text-center'>Loading cart...</div>}
         {error && (
           <div className='text-red-500 text-center'>
-            Failed to load cart data
+            Failed to load cart data: {error?.data?.message || error.error}
           </div>
         )}
-        {isLoading ? (
-          <div className='text-center'>Loading cart...</div>
-        ) : (
-          <Outlet />
-        )}
+        <Outlet />
       </main>
     </>
   )

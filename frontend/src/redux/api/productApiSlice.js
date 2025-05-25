@@ -159,6 +159,15 @@ export const productApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ['Products'],
     }),
 
+    removeBulkDiscount: builder.mutation({
+      query: (discountData) => ({
+        url: `${PRODUCT_URL}/bulk-discount`,
+        method: 'DELETE',
+        body: discountData,
+      }),
+      invalidatesTags: ['Products'],
+    }),
+
     // ======================================
     // CATEGORIES
     // ======================================

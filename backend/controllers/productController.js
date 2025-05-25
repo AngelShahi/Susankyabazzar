@@ -212,7 +212,7 @@ const fetchTopProducts = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const fetchNewProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find().sort({ createdAt: -1 }).limit(5)
+  const products = await Product.find().sort({ createdAt: -1 }).limit(6)
   res.json(products)
 })
 

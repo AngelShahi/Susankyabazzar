@@ -63,10 +63,19 @@ function profileUpdateReducer(state, action) {
 const Profile = () => {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
+  const [displayEmail, setDisplayEmail] = useState('') // For UI display
   const [newEmail, setNewEmail] = useState('')
+  const [displayNewEmail, setDisplayNewEmail] = useState('') // For UI display
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [otp, setOtp] = useState('')
+  const [errors, setErrors] = useState({
+    username: '',
+    newEmail: '',
+    password: '',
+    confirmPassword: '',
+    otp: '',
+  })
 
   const [profileState, dispatch] = useReducer(
     profileUpdateReducer,
@@ -81,14 +90,95 @@ const Profile = () => {
 
   useEffect(() => {
     setUsername(userInfo.username)
-    setEmail(userInfo.email)
-    setNewEmail(userInfo.email)
+    setEmail(userInfo.email.toLowerCase()) // Normalize email
+    setDisplayEmail(userInfo.email) // Keep original for display
+    setNewEmail(userInfo.email.toLowerCase())
+    setDisplayNewEmail(userInfo.email)
   }, [userInfo.email, userInfo.username])
+
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {
+      username: '',
+      newEmail: '',
+      password: '',
+      confirmPassword: '',
+      otp: '',
+    }
+    let isValid = true
+
+    // Username validation
+    if (username !== userInfo.username) {
+      if (!username.trim()) {
+        newErrors.username = 'Username is required'
+        isValid = false
+      } else if (username.length < 2) {
+        newErrors.username = 'Username must be at least 2 characters long'
+        isValid = false
+      }
+    }
+
+    // Email validation
+    if (profileState.step === 'email-edit' && newEmail !== email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!newEmail.trim()) {
+        newErrors.newEmail = 'Email is required'
+        isValid = false
+      } else if (!emailRegex.test(newEmail)) {
+        newErrors.newEmail = 'Please enter a valid email address'
+        isValid = false
+      }
+    }
+
+    // Password validation
+    if (profileState.step === 'password-edit') {
+      if (!password) {
+        newErrors.password = 'Password is required'
+        isValid = false
+      } else if (password.length < 8) {
+        newErrors.password = 'Password must be at least 8 characters long'
+        isValid = false
+      } else if (!/[A-Z]/.test(password)) {
+        newErrors.password =
+          'Password must contain at least one uppercase letter'
+        isValid = false
+      } else if (!/[0-9]/.test(password)) {
+        newErrors.password = 'Password must contain at least one number'
+        isValid = false
+      }
+
+      // Confirm password validation
+      if (password !== confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match'
+        isValid = false
+      }
+    }
+
+    // OTP validation
+    if (
+      profileState.step === 'email-verify' ||
+      profileState.step === 'password-verify'
+    ) {
+      if (!otp.trim()) {
+        newErrors.otp = 'Verification code is required'
+        isValid = false
+      } else if (otp.length !== 6) {
+        newErrors.otp = 'Verification code must be 6 digits'
+        isValid = false
+      } else if (!/^\d+$/.test(otp)) {
+        newErrors.otp = 'Verification code must contain only numbers'
+        isValid = false
+      }
+    }
+
+    setErrors(newErrors)
+    return isValid
+  }
 
   const hasChanges = () => {
     if (username !== userInfo.username) return true
     if (
-      newEmail !== userInfo.email &&
+      newEmail !== userInfo.email.toLowerCase() &&
       profileState.otpVerified &&
       profileState.currentUpdateType === 'email'
     )
@@ -102,17 +192,22 @@ const Profile = () => {
     return false
   }
 
+  const handleNewEmailChange = (e) => {
+    const inputEmail = e.target.value
+    setDisplayNewEmail(inputEmail) // Keep user-entered email for UI
+    setNewEmail(inputEmail.toLowerCase()) // Normalize to lowercase
+  }
+
   const handleRequestOtp = async () => {
+    if (!validateForm()) {
+      return
+    }
+
     try {
       dispatch({ type: 'OTP_REQUEST_START' })
       let data = { userId: userInfo._id }
 
       if (profileState.currentUpdateType === 'email') {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(newEmail)) {
-          toast.error('Please enter a valid email address')
-          return
-        }
         data.email = newEmail
       } else {
         data.email = email
@@ -135,8 +230,7 @@ const Profile = () => {
   }
 
   const handleVerifyOtp = async () => {
-    if (!otp || otp.length < 6) {
-      toast.error('Please enter a valid verification code')
+    if (!validateForm()) {
       return
     }
 
@@ -157,8 +251,9 @@ const Profile = () => {
           email: newEmail,
         }).unwrap()
         reduxDispatch(setCredentials({ ...res }))
-        toast.success('Email updated successfully')
         setEmail(newEmail)
+        setDisplayEmail(displayNewEmail)
+        toast.success('Email updated successfully')
       } else {
         toast.success(
           'Password verification successful. You can now update your profile.'
@@ -175,13 +270,11 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    dispatch({ type: 'START_SUBMIT' })
-
-    if (password && password !== confirmPassword) {
-      toast.error('Passwords do not match')
-      dispatch({ type: 'FINISH_SUBMIT' })
+    if (!validateForm()) {
       return
     }
+
+    dispatch({ type: 'START_SUBMIT' })
 
     if (!hasChanges()) {
       toast.info('No changes to update')
@@ -221,15 +314,27 @@ const Profile = () => {
   const handleCancelUpdate = () => {
     if (profileState.currentUpdateType === 'email') {
       setNewEmail(email)
+      setDisplayNewEmail(displayEmail)
     } else {
       setPassword('')
       setConfirmPassword('')
     }
     setOtp('')
+    setErrors({
+      username: '',
+      newEmail: '',
+      password: '',
+      confirmPassword: '',
+      otp: '',
+    })
     dispatch({ type: 'CANCEL_UPDATE' })
   }
 
   const isLoading = profileState.loading
+
+  const styles = {
+    errorColor: 'rgb(239, 68, 68)', // Red color for error messages
+  }
 
   return (
     <div className='min-h-screen bg-[rgb(7,10,19)] text-white py-8'>
@@ -255,11 +360,21 @@ const Profile = () => {
               </label>
               <input
                 type='text'
-                className='w-full p-3 border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none'
+                className={`w-full p-3 border rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none ${
+                  errors.username ? 'border-red-500' : 'border-gray-700'
+                }`}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={isLoading}
               />
+              {errors.username && (
+                <p
+                  className='text-sm mt-1'
+                  style={{ color: styles.errorColor }}
+                >
+                  {errors.username}
+                </p>
+              )}
             </div>
 
             {/* Email Section */}
@@ -275,7 +390,7 @@ const Profile = () => {
                   type='email'
                   readOnly
                   className='w-full p-3 border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white opacity-70 cursor-not-allowed'
-                  value={email}
+                  value={displayEmail}
                 />
               </div>
 
@@ -305,15 +420,25 @@ const Profile = () => {
                       </label>
                       <input
                         type='email'
-                        className='w-full p-3 border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none mb-4'
-                        value={newEmail}
-                        onChange={(e) => setNewEmail(e.target.value)}
+                        className={`w-full p-3 border rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none mb-4 ${
+                          errors.newEmail ? 'border-red-500' : 'border-gray-700'
+                        }`}
+                        value={displayNewEmail}
+                        onChange={handleNewEmailChange}
                         disabled={
                           isLoading ||
                           profileState.otpSent ||
                           profileState.loadingOtpRequest
                         }
                       />
+                      {errors.newEmail && (
+                        <p
+                          className='text-sm mt-1'
+                          style={{ color: styles.errorColor }}
+                        >
+                          {errors.newEmail}
+                        </p>
+                      )}
                       <div className='flex gap-2'>
                         <button
                           type='button'
@@ -322,7 +447,8 @@ const Profile = () => {
                             profileState.loadingOtpRequest ||
                             newEmail === email ||
                             !newEmail ||
-                            isLoading
+                            isLoading ||
+                            errors.newEmail
                           }
                           className='flex-1 py-2 px-4 rounded-lg font-medium bg-[rgb(211,190,249)] text-[rgb(7,10,19)] hover:bg-[rgb(191,170,229)] disabled:opacity-70'
                         >
@@ -356,7 +482,7 @@ const Profile = () => {
                         </div>
                         <div>
                           <p className='text-sm text-gray-400'>
-                            Verification code sent to {newEmail}
+                            Verification code sent to {displayNewEmail}
                           </p>
                         </div>
                       </div>
@@ -365,7 +491,9 @@ const Profile = () => {
                       </label>
                       <input
                         type='text'
-                        className='w-full p-3 border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none mb-4 tracking-widest text-center'
+                        className={`w-full p-3 border rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none mb-4 tracking-widest text-center ${
+                          errors.otp ? 'border-red-500' : 'border-gray-700'
+                        }`}
                         value={otp}
                         onChange={(e) =>
                           setOtp(
@@ -377,6 +505,14 @@ const Profile = () => {
                         maxLength={6}
                         disabled={isLoading || profileState.loadingOtpVerify}
                       />
+                      {errors.otp && (
+                        <p
+                          className='text-sm mt-1'
+                          style={{ color: styles.errorColor }}
+                        >
+                          {errors.otp}
+                        </p>
+                      )}
                       <div className='flex gap-2'>
                         <button
                           type='button'
@@ -385,7 +521,8 @@ const Profile = () => {
                             !otp ||
                             otp.length < 6 ||
                             isLoading ||
-                            profileState.loadingOtpVerify
+                            profileState.loadingOtpVerify ||
+                            errors.otp
                           }
                           className='flex-1 py-2 px-4 rounded-lg font-medium bg-[rgb(211,190,249)] text-[rgb(7,10,19)] hover:bg-[rgb(191,170,229)] disabled:opacity-70'
                         >
@@ -440,28 +577,43 @@ const Profile = () => {
                       </label>
                       <input
                         type='password'
-                        className='w-full p-3 border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none mb-4'
+                        className={`w-full p-3 border rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none mb-4 ${
+                          errors.password ? 'border-red-500' : 'border-gray-700'
+                        }`}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         disabled={isLoading || profileState.loadingOtpRequest}
                       />
+                      {errors.password && (
+                        <p
+                          className='text-sm mt-1'
+                          style={{ color: styles.errorColor }}
+                        >
+                          {errors.password}
+                        </p>
+                      )}
                       <label className='block text-[rgb(211,190,249)] font-medium mb-2'>
                         Confirm Password
                       </label>
                       <input
                         type='password'
-                        className='w-full p-3 border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none mb-4'
+                        className={`w-full p-3 border rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none mb-4 ${
+                          errors.confirmPassword
+                            ? 'border-red-500'
+                            : 'border-gray-700'
+                        }`}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         disabled={isLoading || profileState.loadingOtpRequest}
                       />
-                      {password &&
-                        confirmPassword &&
-                        password !== confirmPassword && (
-                          <p className='text-red-400 text-sm mb-4'>
-                            Passwords do not match
-                          </p>
-                        )}
+                      {errors.confirmPassword && (
+                        <p
+                          className='text-sm mt-1'
+                          style={{ color: styles.errorColor }}
+                        >
+                          {errors.confirmPassword}
+                        </p>
+                      )}
                       <div className='flex gap-2'>
                         <button
                           type='button'
@@ -469,7 +621,8 @@ const Profile = () => {
                           disabled={
                             !password ||
                             !confirmPassword ||
-                            password !== confirmPassword ||
+                            errors.password ||
+                            errors.confirmPassword ||
                             isLoading ||
                             profileState.loadingOtpRequest
                           }
@@ -505,7 +658,7 @@ const Profile = () => {
                         </div>
                         <div>
                           <p className='text-sm text-gray-400'>
-                            Verification code sent to {email}
+                            Verification code sent to {displayEmail}
                           </p>
                         </div>
                       </div>
@@ -514,7 +667,9 @@ const Profile = () => {
                       </label>
                       <input
                         type='text'
-                        className='w-full p-3 border border-gray-700 rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none mb-4 tracking-widest text-center'
+                        className={`w-full p-3 border rounded-lg bg-[rgb(7,10,19)] text-white focus:border-[rgb(211,190,249)] focus:outline-none mb-4 tracking-widest text-center ${
+                          errors.otp ? 'border-red-500' : 'border-gray-700'
+                        }`}
                         value={otp}
                         onChange={(e) =>
                           setOtp(
@@ -526,6 +681,14 @@ const Profile = () => {
                         maxLength={6}
                         disabled={isLoading || profileState.loadingOtpVerify}
                       />
+                      {errors.otp && (
+                        <p
+                          className='text-sm mt-1'
+                          style={{ color: styles.errorColor }}
+                        >
+                          {errors.otp}
+                        </p>
+                      )}
                       <div className='flex gap-2'>
                         <button
                           type='button'
@@ -534,7 +697,8 @@ const Profile = () => {
                             !otp ||
                             otp.length < 6 ||
                             isLoading ||
-                            profileState.loadingOtpVerify
+                            profileState.loadingOtpVerify ||
+                            errors.otp
                           }
                           className='flex-1 py-2 px-4 rounded-lg font-medium bg-[rgb(211,190,249)] text-[rgb(7,10,19)] hover:bg-[rgb(191,170,229)] disabled:opacity-70'
                         >
@@ -561,7 +725,11 @@ const Profile = () => {
             <div className='flex flex-col sm:flex-row gap-4 pt-4'>
               <button
                 type='submit'
-                disabled={!hasChanges() || isLoading}
+                disabled={
+                  !hasChanges() ||
+                  isLoading ||
+                  Object.values(errors).some((e) => e)
+                }
                 className='flex-1 py-3 px-6 rounded-lg font-bold bg-[rgb(211,190,249)] text-[rgb(7,10,19)] hover:bg-[rgb(191,170,229)] transition-colors disabled:opacity-70 disabled:cursor-not-allowed'
               >
                 {isLoading ? 'Updating...' : 'Update Profile'}

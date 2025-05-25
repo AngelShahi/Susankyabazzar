@@ -60,12 +60,10 @@ const createOrder = async (req, res) => {
       throw new Error('No order items')
     }
 
-    // Fetch products from DB
     const itemsFromDB = await Product.find({
       _id: { $in: orderItems.map((x) => x.product) },
     })
 
-    // Map order items and validate discounts
     const dbOrderItems = orderItems.map((itemFromClient) => {
       const matchingItemFromDB = itemsFromDB.find(
         (itemFromDB) => itemFromDB._id.toString() === itemFromClient.product
@@ -76,7 +74,6 @@ const createOrder = async (req, res) => {
         throw new Error(`Product not found: ${itemFromClient.product}`)
       }
 
-      // Validate discount
       const isDiscountValid =
         itemFromClient.discount &&
         itemFromClient.discount.active &&
@@ -100,17 +97,15 @@ const createOrder = async (req, res) => {
         name: itemFromClient.name,
         qty: itemFromClient.qty,
         image: itemFromClient.image,
-        price: itemFromClient.price, // Discounted price
+        price: itemFromClient.price,
         product: itemFromClient.product,
         discount: isDiscountValid ? itemFromClient.discount : null,
       }
     })
 
-    // Calculate prices
     const { itemsPrice, taxPrice, shippingPrice, totalPrice, totalSavings } =
       calcPrices(dbOrderItems)
 
-    // Create order
     const order = new Order({
       orderItems: dbOrderItems,
       user: req.user._id,
@@ -121,15 +116,20 @@ const createOrder = async (req, res) => {
       shippingPrice,
       totalPrice,
       totalSavings,
+      isPaid: false,
+      paidAt: null,
     })
 
     const createdOrder = await order.save()
+    console.log(
+      `Order created: ${createdOrder._id}, isPaid: ${createdOrder.isPaid}, totalPrice: ${createdOrder.totalPrice}`
+    )
     res.status(201).json(createdOrder)
   } catch (error) {
+    console.error('Error in createOrder:', error)
     res.status(error.status || 500).json({ error: error.message })
   }
 }
-
 const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find({}).populate('user', 'id username')
@@ -159,24 +159,45 @@ const countTotalOrders = async (req, res) => {
 
 const calculateTotalSales = async (req, res) => {
   try {
-    const orders = await Order.find({ isPaid: true })
-    const totalSales = orders.reduce(
-      (sum, order) => sum + Number(order.totalPrice),
-      0
+    // Debug query to log matched orders
+    const paidOrders = await Order.find({ isPaid: true }).select(
+      '_id totalPrice isPaid paidAt paymentMethod'
     )
-    const totalSavings = orders.reduce(
-      (sum, order) => sum + Number(order.totalSavings),
-      0
+    console.log(
+      'Orders included in totalSales:',
+      paidOrders.map((o) => ({
+        id: o._id,
+        totalPrice: o.totalPrice,
+        isPaid: o.isPaid,
+        paidAt: o.paidAt,
+        paymentMethod: o.paymentMethod,
+      }))
     )
+
+    const result = await Order.aggregate([
+      { $match: { isPaid: { $eq: true } } }, // Strict boolean match
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: { $toDouble: '$totalPrice' } },
+          totalSavings: { $sum: { $toDouble: '$totalSavings' } },
+          orderCount: { $sum: 1 },
+        },
+      },
+    ])
+
+    console.log('Total sales aggregation result:', result)
     res.json({
-      totalSales: totalSales.toFixed(2),
-      totalSavings: totalSavings.toFixed(2),
+      totalSales: result.length > 0 ? result[0].totalSales.toFixed(2) : '0.00',
+      totalSavings:
+        result.length > 0 ? result[0].totalSavings.toFixed(2) : '0.00',
+      orderCount: result.length > 0 ? result[0].orderCount : 0,
     })
   } catch (error) {
+    console.error('Error in calculateTotalSales:', error)
     res.status(500).json({ error: error.message })
   }
 }
-
 const calcualteTotalSalesByDate = async (req, res) => {
   try {
     const salesByDate = await Order.aggregate([

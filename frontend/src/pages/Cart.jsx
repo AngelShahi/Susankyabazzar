@@ -88,7 +88,7 @@ const Cart = () => {
       return
     }
 
-    // Use item.quantity 
+    // Use item.quantity
     const productQuantity = item.quantity ?? item.product?.quantity ?? 20
     const maxQty = Math.min(productQuantity, 20)
     const validatedQty = Math.min(quantity, maxQty)
@@ -219,7 +219,11 @@ const Cart = () => {
             <Link
               to='/shop'
               className='rounded-lg font-medium py-3 px-8 transition-colors'
-              style4810
+              style={{
+                backgroundColor: 'rgba(211, 190, 249, 0.9)',
+                boxShadow: '0 4px 12px rgba(211, 190, 249, 0.5)',
+                color: 'rgb(7, 10, 19)',
+              }}
               onMouseOver={(e) => {
                 e.currentTarget.style.backgroundColor = 'rgba(211, 190, 249, 1)'
                 e.currentTarget.style.boxShadow =

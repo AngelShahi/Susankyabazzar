@@ -18,11 +18,15 @@ import {
   useGetAllProductsQuery,
 } from '../../redux/api/productApiSlice'
 import Loader from '../../components/Loader'
+import Modal from '../../components/Modal'
 
 const DiscountListPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   // Fetch all products
   const {
@@ -39,16 +43,24 @@ const DiscountListPage = () => {
     allProductsData?.filter((product) => product.discount?.active) || []
 
   // Handle discount removal
-  const handleRemoveDiscount = async (productId) => {
-    if (window.confirm('Are you sure you want to remove this discount?')) {
-      try {
-        await removeDiscount(productId).unwrap()
-        toast.success('Discount removed successfully')
-        refetch()
-      } catch (error) {
-        console.error('Failed to remove discount:', error)
-        toast.error(error?.data?.error || 'Failed to remove discount')
-      }
+  const handleRemoveDiscount = async (product) => {
+    setSelectedProduct(product)
+    setShowDeleteModal(true)
+  }
+
+  const confirmRemoveDiscount = async () => {
+    setIsProcessing(true)
+    try {
+      await removeDiscount(selectedProduct._id).unwrap()
+      toast.success('Discount removed successfully')
+      refetch()
+    } catch (error) {
+      console.error('Failed to remove discount:', error)
+      toast.error(error?.data?.error || 'Failed to remove discount')
+    } finally {
+      setIsProcessing(false)
+      setShowDeleteModal(false)
+      setSelectedProduct(null)
     }
   }
 
@@ -130,6 +142,45 @@ const DiscountListPage = () => {
           Create New Discount
         </Link>
       </div>
+
+      {/* Delete Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false)
+          setSelectedProduct(null)
+        }}
+        title='Remove Discount'
+        className='bg-[rgb(13,17,29)] border-gray-800 rounded-lg border-none'
+      >
+        <div className='space-y-4 p-4 bg-[rgb(13,17,29)] text-gray-100'>
+          <p className='text-white font-semibold'>
+            Are you sure you want to remove the discount for{' '}
+            <span className='text-[rgb(211,190,249)]'>
+              {selectedProduct?.name}
+            </span>
+            ? This action cannot be undone.
+          </p>
+          <div className='flex justify-end space-x-3'>
+            <button
+              onClick={() => {
+                setShowDeleteModal(false)
+                setSelectedProduct(null)
+              }}
+              className='px-4 py-2 bg-gray-600 rounded-md hover:bg-gray-700 text-gray-100'
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmRemoveDiscount}
+              disabled={isProcessing}
+              className='px-4 py-2 bg-red-600 rounded-md hover:bg-red-700 text-gray-100 disabled:opacity-50'
+            >
+              {isProcessing ? 'Processing...' : 'Confirm Removal'}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Current Discounts List */}
       <div>
@@ -274,8 +325,9 @@ const DiscountListPage = () => {
                           <FaEdit size={18} />
                         </Link>
                         <button
-                          onClick={() => handleRemoveDiscount(product._id)}
+                          onClick={() => handleRemoveDiscount(product)}
                           className='text-red-400 hover:text-red-600'
+                          disabled={isProcessing}
                         >
                           <FaTrash size={18} />
                         </button>

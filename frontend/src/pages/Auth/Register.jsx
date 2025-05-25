@@ -20,12 +20,22 @@ const Register = () => {
   // State for form inputs and UI toggles
   const [username, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [displayEmail, setDisplayEmail] = useState('') // Store user-entered email for UI
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [otp, setOtp] = useState('')
-  const [showOtpInput, setShowOtpInput] = useState(false) // Toggle between registration and OTP verification form
-  const [showPassword, setShowPassword] = useState(false) // Toggle password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false) // Toggle confirm password visibility
+  const [showOtpInput, setShowOtpInput] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  // State for form validation errors
+  const [errors, setErrors] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    otp: '',
+  })
 
   // Redux hooks for dispatching actions and accessing state
   const dispatch = useDispatch()
@@ -50,50 +60,125 @@ const Register = () => {
     }
   }, [navigate, redirect, userInfo])
 
+  // Handle email input change to normalize to lowercase
+  const handleEmailChange = (e) => {
+    const inputEmail = e.target.value
+    setDisplayEmail(inputEmail) // Keep user-entered email for UI
+    setEmail(inputEmail.toLowerCase()) // Normalize to lowercase for processing
+  }
+
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      otp: '',
+    }
+    let isValid = true
+
+    // Username validation
+    if (!showOtpInput) {
+      if (!username.trim()) {
+        newErrors.username = 'Full name is required'
+        isValid = false
+      } else if (username.length < 2) {
+        newErrors.username = 'Name must be at least 2 characters long'
+        isValid = false
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!email.trim()) {
+        newErrors.email = 'Email is required'
+        isValid = false
+      } else if (!emailRegex.test(email)) {
+        newErrors.email = 'Please enter a valid email address'
+        isValid = false
+      }
+
+      // Password validation
+      if (!password) {
+        newErrors.password = 'Password is required'
+        isValid = false
+      } else if (password.length < 8) {
+        newErrors.password = 'Password must be at least 8 characters long'
+        isValid = false
+      } else if (!/[A-Z]/.test(password)) {
+        newErrors.password =
+          'Password must contain at least one uppercase letter'
+        isValid = false
+      } else if (!/[0-9]/.test(password)) {
+        newErrors.password = 'Password must contain at least one number'
+        isValid = false
+      }
+
+      // Confirm password validation
+      if (password !== confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match'
+        isValid = false
+      }
+    } else {
+      // OTP validation
+      if (!otp.trim()) {
+        newErrors.otp = 'Verification code is required'
+        isValid = false
+      } else if (otp.length !== 6) {
+        newErrors.otp = 'Verification code must be 6 digits'
+        isValid = false
+      } else if (!/^\d+$/.test(otp)) {
+        newErrors.otp = 'Verification code must contain only numbers'
+        isValid = false
+      }
+    }
+
+    setErrors(newErrors)
+    return isValid
+  }
+
   // Handle registration form submission
   const submitHandler = async (e) => {
     e.preventDefault()
 
-    // Validate password match
-    if (password !== confirmPassword) {
-      toast.error('Invalid credentials provided')
-    } else {
-      try {
-        // Attempt to register user
-        await register({ username, email, password }).unwrap()
-        toast.success(
-          'Account creation initiated. Please verify your credentials.'
-        )
-        setShowOtpInput(true) // Show OTP input form
-      } catch (err) {
-        console.error(err)
-        toast.error(err?.data?.message || 'Account creation failed')
-      }
+    if (!validateForm()) {
+      return
+    }
+
+    try {
+      await register({ username, email, password }).unwrap()
+      toast.success(
+        'Account creation initiated. Please verify your credentials.'
+      )
+      setShowOtpInput(true)
+    } catch (err) {
+      console.error(err)
+      toast.error(err?.data?.message || 'Account creation failed')
     }
   }
 
   // Handle OTP verification form submission
   const verifyOtpHandler = async (e) => {
     e.preventDefault()
+
+    if (!validateForm()) {
+      return
+    }
+
     try {
-      // Verify OTP and get user data
       const response = await verifyOtp({ email, otp }).unwrap()
       console.log('OTP verification response:', response)
-
-      // Store user credentials in Redux
       dispatch(setCredentials(response))
       toast.success('Credentials verified. Access granted.')
 
-      // Prevent admin registration
       if (response.isAdmin) {
         toast.error('Unauthorized account type')
         return
       }
 
-      // Navigate to redirect URL or home
       if (redirect === '/') {
         navigate(redirect, { replace: true })
-        window.location.reload() // Refresh to ensure state consistency
+        window.location.reload()
       } else {
         navigate(redirect)
       }
@@ -110,20 +195,18 @@ const Register = () => {
     darkAccent: 'rgb(161, 140, 199)',
     darkBg: 'rgb(13, 17, 30)',
     lighterBg: 'rgb(20, 25, 40)',
+    errorColor: 'rgb(239, 68, 68)', // Red color for error messages
   }
 
   return (
-    // Main container with full-screen centering
     <div
       className='min-h-screen flex items-center justify-center p-4'
       style={{ backgroundColor: styles.backgroundColor }}
     >
-      {/* Form and image container */}
       <div
         className='w-full max-w-6xl flex rounded-xl shadow-2xl overflow-hidden'
         style={{ backgroundColor: styles.darkBg }}
       >
-        {/* Left Side - Registration/OTP Form */}
         <div className='w-full lg:w-1/2 p-8 md:p-12'>
           <div className='mb-8'>
             <h1 className='text-3xl font-bold text-white mb-2'>
@@ -131,15 +214,13 @@ const Register = () => {
             </h1>
             <p className='text-gray-300'>
               {showOtpInput
-                ? `Enter the code sent to your registered contact`
+                ? `Enter the code sent to ${displayEmail}`
                 : 'Sign up to access our platform'}
             </p>
           </div>
 
-          {/* Conditional rendering: Registration form or OTP verification form */}
           {!showOtpInput ? (
             <form onSubmit={submitHandler} className='space-y-6'>
-              {/* Username Input */}
               <div>
                 <label
                   htmlFor='username'
@@ -166,10 +247,14 @@ const Register = () => {
                   <input
                     type='text'
                     id='username'
-                    className='mt-1 pl-10 p-3 text-white border rounded-lg w-full focus:outline-none focus:ring-2'
+                    className={`mt-1 pl-10 p-3 text-white border rounded-lg w-full focus:outline-none focus:ring-2 ${
+                      errors.username ? 'border-red-500' : ''
+                    }`}
                     style={{
                       backgroundColor: styles.lighterBg,
-                      borderColor: 'rgba(211, 190, 249, 0.3)',
+                      borderColor: errors.username
+                        ? styles.errorColor
+                        : 'rgba(211, 190, 249, 0.3)',
                       boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
                     }}
                     placeholder='Enter your name'
@@ -177,10 +262,17 @@ const Register = () => {
                     onChange={(e) => setName(e.target.value)}
                     required
                   />
+                  {errors.username && (
+                    <p
+                      className='text-sm mt-1'
+                      style={{ color: styles.errorColor }}
+                    >
+                      {errors.username}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Email Input */}
               <div>
                 <label
                   htmlFor='email'
@@ -207,21 +299,32 @@ const Register = () => {
                   <input
                     type='email'
                     id='email'
-                    className='mt-1 pl-10 p-3 text-white border rounded-lg w-full focus:outline-none focus:ring-2'
+                    className={`mt-1 pl-10 p-3 text-white border rounded-lg w-full focus:outline-none focus:ring-2 ${
+                      errors.email ? 'border-red-500' : ''
+                    }`}
                     style={{
                       backgroundColor: styles.lighterBg,
-                      borderColor: 'rgba(211, 190, 249, 0.3)',
+                      borderColor: errors.email
+                        ? styles.errorColor
+                        : 'rgba(211, 190, 249, 0.3)',
                       boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
                     }}
                     placeholder='Enter contact address'
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={displayEmail} // Show user-entered email in UI
+                    onChange={handleEmailChange} // Normalize email on change
                     required
                   />
+                  {errors.email && (
+                    <p
+                      className='text-sm mt-1'
+                      style={{ color: styles.errorColor }}
+                    >
+                      {errors.email}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Password Input with Visibility Toggle */}
               <div>
                 <label
                   htmlFor='password'
@@ -248,10 +351,14 @@ const Register = () => {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     id='password'
-                    className='mt-1 pl-10 p-3 text-white border rounded-lg w-full focus:outline-none focus:ring-2'
+                    className={`mt-1 pl-10 p-3 text-white border rounded-lg w-full focus:outline-none focus:ring-2 ${
+                      errors.password ? 'border-red-500' : ''
+                    }`}
                     style={{
                       backgroundColor: styles.lighterBg,
-                      borderColor: 'rgba(211, 190, 249, 0.3)',
+                      borderColor: errors.password
+                        ? styles.errorColor
+                        : 'rgba(211, 190, 249, 0.3)',
                       boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
                     }}
                     placeholder='••••••••'
@@ -286,10 +393,17 @@ const Register = () => {
                       )}
                     </svg>
                   </div>
+                  {errors.password && (
+                    <p
+                      className='text-sm mt-1'
+                      style={{ color: styles.errorColor }}
+                    >
+                      {errors.password}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Confirm Password Input with Visibility Toggle */}
               <div>
                 <label
                   htmlFor='confirmPassword'
@@ -316,10 +430,14 @@ const Register = () => {
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     id='confirmPassword'
-                    className='mt-1 pl-10 p-3 text-white border rounded-lg w-full focus:outline-none focus:ring-2'
+                    className={`mt-1 pl-10 p-3 text-white border rounded-lg w-full focus:outline-none focus:ring-2 ${
+                      errors.confirmPassword ? 'border-red-500' : ''
+                    }`}
                     style={{
                       backgroundColor: styles.lighterBg,
-                      borderColor: 'rgba(211, 190, 249, 0.3)',
+                      borderColor: errors.confirmPassword
+                        ? styles.errorColor
+                        : 'rgba(211, 190, 249, 0.3)',
                       boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
                     }}
                     placeholder='••••••••'
@@ -354,10 +472,17 @@ const Register = () => {
                       )}
                     </svg>
                   </div>
+                  {errors.confirmPassword && (
+                    <p
+                      className='text-sm mt-1'
+                      style={{ color: styles.errorColor }}
+                    >
+                      {errors.confirmPassword}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Submit Button for Registration */}
               <button
                 disabled={isLoading}
                 type='submit'
@@ -372,7 +497,6 @@ const Register = () => {
             </form>
           ) : (
             <form onSubmit={verifyOtpHandler} className='space-y-6'>
-              {/* OTP Input */}
               <div>
                 <label
                   htmlFor='otp'
@@ -399,10 +523,14 @@ const Register = () => {
                   <input
                     type='text'
                     id='otp'
-                    className='mt-1 pl-10 p-3 text-white border rounded-lg w-full focus:outline-none focus:ring-2'
+                    className={`mt-1 pl-10 p-3 text-white border rounded-lg w-full focus:outline-none focus:ring-2 ${
+                      errors.otp ? 'border-red-500' : ''
+                    }`}
                     style={{
                       backgroundColor: styles.lighterBg,
-                      borderColor: 'rgba(211, 190, 249, 0.3)',
+                      borderColor: errors.otp
+                        ? styles.errorColor
+                        : 'rgba(211, 190, 249, 0.3)',
                       boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
                     }}
                     placeholder='Enter verification code'
@@ -410,10 +538,17 @@ const Register = () => {
                     onChange={(e) => setOtp(e.target.value)}
                     required
                   />
+                  {errors.otp && (
+                    <p
+                      className='text-sm mt-1'
+                      style={{ color: styles.errorColor }}
+                    >
+                      {errors.otp}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Submit Button for OTP Verification */}
               <button
                 disabled={isVerifying}
                 type='submit'
@@ -428,7 +563,6 @@ const Register = () => {
             </form>
           )}
 
-          {/* Link to Login Page */}
           <div className='mt-8 text-center'>
             <p className='text-gray-300'>
               Already registered?{' '}
@@ -442,7 +576,6 @@ const Register = () => {
             </p>
           </div>
         </div>
-        /* Right Side - Decorative Image Section (Visible on Large Screens) */
         <div className='hidden lg:block w-1/2 relative'>
           <div className='absolute inset-0 bg-gradient-to-r from-black to-transparent z-10 opacity-60'></div>
           <div className='absolute inset-0 flex items-center justify-center z-20'>

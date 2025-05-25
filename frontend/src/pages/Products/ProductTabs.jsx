@@ -60,16 +60,6 @@ const ProductTabs = ({
           >
             All Reviews ({product.reviews.length})
           </button>
-          <button
-            className={`mr-6 py-4 px-3 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 3
-                ? 'border-[rgb(211,190,249)] text-[rgb(211,190,249)]'
-                : 'border-transparent text-gray-400 hover:text-[rgb(211,190,249)] hover:border-gray-600'
-            }`}
-            onClick={() => handleTabClick(3)}
-          >
-            Related Products
-          </button>
         </nav>
       </div>
 
@@ -185,40 +175,6 @@ const ProductTabs = ({
                 </div>
               ))
             )}
-          </div>
-        )}
-
-        {/* Related Products Tab */}
-        {activeTab === 3 && (
-          <div className='w-full overflow-x-auto'>
-            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full'>
-              {!data ? (
-                <Loader />
-              ) : (
-                data.map((product) => (
-                  <div
-                    key={product._id}
-                    className='w-full bg-[rgba(7,10,19,0.7)] border border-gray-700 rounded-lg overflow-hidden shadow-md hover:shadow-[rgb(211,190,249,0.2)] transition-all hover:border-[rgb(211,190,249,0.5)]'
-                  >
-                    {/* Product card content would go here */}
-                    <div className='p-4'>
-                      <h3 className='text-[rgb(211,190,249)] font-medium truncate'>
-                        {product.name}
-                      </h3>
-                      <div className='flex items-center mt-2'>
-                        <Ratings value={product.rating} />
-                        <span className='ml-2 text-sm text-gray-400'>
-                          ({product.numReviews})
-                        </span>
-                      </div>
-                      <p className='text-gray-300 font-bold mt-2'>
-                        ₨ {product.price}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
           </div>
         )}
       </div>

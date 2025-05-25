@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import {
   useGetProductsQuery,
   useGetTopProductsQuery,
+  useGetNewProductsQuery,
 } from '../redux/api/productApiSlice'
 import Loader from '../components/Loader'
 import Message from '../components/Message'
@@ -23,7 +24,7 @@ import {
   FaLinkedin,
 } from 'react-icons/fa'
 
-// Product component for special products section
+// Product component (unchanged)
 const Product = ({ product }) => {
   const isFeatured = product.rating >= 4.5
   const isNew = moment(product.createdAt).isAfter(moment().subtract(30, 'days'))
@@ -77,7 +78,7 @@ const Product = ({ product }) => {
   )
 }
 
-// Hero Banner Carousel component
+// ProductCarousel component (unchanged)
 const ProductCarousel = () => {
   const { data: products, isLoading, error } = useGetTopProductsQuery()
 
@@ -97,7 +98,6 @@ const ProductCarousel = () => {
 
   return (
     <div className='w-full max-w-6xl mx-auto px-4 py-10 carousel-wrapper'>
-      {/* Custom CSS for carousel controls */}
       <style>
         {`
           .carousel-container .slick-prev,
@@ -140,7 +140,7 @@ const ProductCarousel = () => {
         </Message>
       ) : (
         <Slider {...settings}>
-          {products.map((product) => (
+          {products?.map((product) => (
             <div key={product._id} className='relative'>
               <div className='w-full h-120 relative bg-[rgb(7,10,19)]'>
                 <img
@@ -171,7 +171,7 @@ const ProductCarousel = () => {
   )
 }
 
-// Footer component
+// Footer component (unchanged)
 const Footer = () => {
   return (
     <footer className='bg-[rgb(7,10,19)] text-gray-300 py-12 border-t border-[rgb(211,190,249)]/30'>
@@ -288,26 +288,52 @@ const Footer = () => {
 // Main Home component
 const Home = () => {
   const { keyword } = useParams()
-  const { data, isLoading, isError } = useGetProductsQuery({ keyword })
+  const {
+    data,
+    isLoading,
+    isError,
+    error: productsError,
+  } = useGetProductsQuery({
+    keyword: keyword || '',
+  })
+  const {
+    data: newProducts,
+    isLoading: isNewLoading,
+    isError: isNewError,
+    error: newProductsError,
+  } = useGetNewProductsQuery()
+
+  // Debug API response
+  console.log('Data from useGetProductsQuery:', data)
+  console.log('Products:', data?.products)
+  console.log('New Products:', newProducts)
+
+  // Ensure products and newProducts are arrays
+  const productsArray = Array.isArray(data?.products) ? data.products : []
+  const newProductsArray = Array.isArray(newProducts) ? newProducts : []
 
   return (
     <div className='bg-[rgb(7,10,19)] min-h-screen'>
       {/* Header */}
       {!keyword ? <Header /> : null}
 
-      {/* Hero Banner Section with proper spacing */}
+      {/* Hero Banner Section */}
       <div className='bg-[rgb(7,10,19)] py-8'>
         <ProductCarousel />
       </div>
 
-      {isLoading ? (
+      {isLoading || isNewLoading ? (
         <div className='flex justify-center my-12 bg-[rgb(7,10,19)]'>
           <Loader />
         </div>
-      ) : isError ? (
+      ) : isError || isNewError ? (
         <div className='max-w-6xl mx-auto px-4 my-12 bg-[rgb(7,10,19)]'>
           <Message variant='danger'>
-            {isError?.data.message || isError.error}
+            {productsError?.data?.message ||
+              productsError?.error ||
+              newProductsError?.data?.message ||
+              newProductsError?.error ||
+              'An error occurred while fetching products'}
           </Message>
         </div>
       ) : (
@@ -324,11 +350,15 @@ const Home = () => {
               </p>
             </div>
 
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10'>
-              {data.products.slice(0, 6).map((product) => (
-                <Product key={product._id} product={product} />
-              ))}
-            </div>
+            {newProductsArray.length === 0 ? (
+              <Message variant='info'>No new products available</Message>
+            ) : (
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10'>
+                {newProductsArray.slice(0, 6).map((product) => (
+                  <Product key={product._id} product={product} />
+                ))}
+              </div>
+            )}
           </section>
 
           {/* Featured Products Section */}
@@ -345,59 +375,63 @@ const Home = () => {
               </Link>
             </div>
 
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10'>
-              {data.products.slice(0, 3).map((product) => (
-                <div
-                  key={`featured-${product._id}`}
-                  className='bg-[rgb(7,10,19)] rounded-lg overflow-hidden border border-[rgb(211,190,249)] transition-all duration-300 hover:shadow-lg hover:shadow-[rgb(211,190,249)]/20'
-                >
-                  <div className='relative'>
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className='w-full h-64 object-cover'
-                    />
-                    <HeartIcon product={product} />
-                  </div>
+            {productsArray.length === 0 ? (
+              <Message variant='info'>No featured products available</Message>
+            ) : (
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10'>
+                {productsArray.slice(0, 3).map((product) => (
+                  <div
+                    key={`featured-${product._id}`}
+                    className='bg-[rgb(7,10,19)] rounded-lg overflow-hidden border border-[rgb(211,190,249)] transition-all duration-300 hover:shadow-lg hover:shadow-[rgb(211,190,249)]/20'
+                  >
+                    <div className='relative'>
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className='w-full h-64 object-cover'
+                      />
+                      <HeartIcon product={product} />
+                    </div>
 
-                  <div className='p-6'>
-                    <h3 className='font-semibold text-white text-xl'>
-                      {product.name}
-                    </h3>
-                    <div className='flex items-center mt-2'>
-                      <div className='flex text-yellow-500 mr-2'>
-                        {[...Array(5)].map((_, i) => (
-                          <FaStar
-                            key={i}
-                            size={16}
-                            className={
-                              i < Math.round(product.rating)
-                                ? 'text-yellow-500'
-                                : 'text-gray-600'
-                            }
-                          />
-                        ))}
+                    <div className='p-6'>
+                      <h3 className='font-semibold text-white text-xl'>
+                        {product.name}
+                      </h3>
+                      <div className='flex items-center mt-2'>
+                        <div className='flex text-yellow-500 mr-2'>
+                          {[...Array(5)].map((_, i) => (
+                            <FaStar
+                              key={i}
+                              size={16}
+                              className={
+                                i < Math.round(product.rating)
+                                  ? 'text-yellow-500'
+                                  : 'text-gray-600'
+                              }
+                            />
+                          ))}
+                        </div>
+                        <span className='text-sm text-gray-400'>
+                          ({product.numReviews} reviews)
+                        </span>
                       </div>
-                      <span className='text-sm text-gray-400'>
-                        ({product.numReviews} reviews)
-                      </span>
-                    </div>
 
-                    <div className='flex justify-between items-center mt-4'>
-                      <span className='text-[rgb(211,190,249)] font-bold text-xl'>
-                        ₨ {product.price}
-                      </span>
-                      <Link
-                        to={`/product/${product._id}`}
-                        className='text-[rgb(211,190,249)] hover:text-[rgb(211,190,249)]/80 text-base border border-[rgb(211,190,249)] px-4 py-2 rounded-md hover:bg-[rgb(211,190,249)]/20 transition-colors duration-300'
-                      >
-                        View Details
-                      </Link>
+                      <div className='flex justify-between items-center mt-4'>
+                        <span className='text-[rgb(211,190,249)] font-bold text-xl'>
+                          ₨ {product.price}
+                        </span>
+                        <Link
+                          to={`/product/${product._id}`}
+                          className='text-[rgb(211,190,249)] hover:text-[rgb(211,190,249)]/80 text-base border border-[rgb(211,190,249)] px-4 py-2 rounded-md hover:bg-[rgb(211,190,249)]/20 transition-colors duration-300'
+                        >
+                          View Details
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </section>
 
           {/* Call to Action Banner */}

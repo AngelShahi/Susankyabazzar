@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit'
 const initialState = {
   cartItems: [],
   shippingAddress: {},
-  paymentMethod: 'Esewa',
+  paymentMethod: '',
   itemsPrice: '0.00',
   shippingPrice: '0.00',
   taxPrice: '0.00',
@@ -17,7 +17,7 @@ const cartSlice = createSlice({
     setCart: (state, action) => {
       state.cartItems = action.payload.cartItems || []
       state.shippingAddress = action.payload.shippingAddress || {}
-      state.paymentMethod = action.payload.paymentMethod || 'Esewa'
+      state.paymentMethod = action.payload.paymentMethod || ''
       state.itemsPrice = action.payload.itemsPrice || '0.00'
       state.shippingPrice = action.payload.shippingPrice || '0.00'
       state.taxPrice = action.payload.taxPrice || '0.00'
@@ -26,7 +26,7 @@ const cartSlice = createSlice({
     resetCart: (state) => {
       state.cartItems = []
       state.shippingAddress = {}
-      state.paymentMethod = 'Esewa'
+      state.paymentMethod = ''
       state.itemsPrice = '0.00'
       state.shippingPrice = '0.00'
       state.taxPrice = '0.00'

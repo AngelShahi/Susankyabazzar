@@ -10,16 +10,43 @@ import {
 import { setCart } from '../../redux/features/cart/cartSlice'
 import ProgressSteps from '../../components/ProgressSteps'
 
+// List of major cities in Nepal for validation
+const NEPALESE_CITIES = [
+  'Kathmandu',
+  'Pokhara',
+  'Lalitpur',
+  'Biratnagar',
+  'Bharatpur',
+  'Birgunj',
+  'Butwal',
+  'Dharan',
+  'Bhairahawa',
+  'Janakpur',
+  'Hetauda',
+  'Nepalgunj',
+  'Dhangadhi',
+  'Itahari',
+  'Ghorahi',
+  'Tulsipur',
+  'Damak',
+  'Birtamod',
+  'Mechinagar',
+  'Lahan',
+].map((city) => city.toLowerCase())
+
 const Shipping = () => {
   const { userInfo } = useSelector((state) => state.auth)
   const dispatch = useDispatch()
   const { data: cartData, isLoading, refetch } = useGetCartQuery()
 
-  const [paymentMethod, setPaymentMethod] = useState('CashOnDelivery')
+  // Initialize paymentMethod as empty to require explicit selection
+  const [paymentMethod, setPaymentMethod] = useState('')
   const [address, setAddress] = useState('')
   const [city, setCity] = useState('')
   const [postalCode, setPostalCode] = useState('')
-  const [country, setCountry] = useState('')
+  const [country] = useState('Nepal') // Country is locked to Nepal
+
+  const [errors, setErrors] = useState({})
 
   const [saveShippingAddress, { isLoading: isShippingAddressLoading }] =
     useSaveShippingAddressMutation()
@@ -34,7 +61,6 @@ const Shipping = () => {
       setAddress(cartData.shippingAddress.address || '')
       setCity(cartData.shippingAddress.city || '')
       setPostalCode(cartData.shippingAddress.postalCode || '')
-      setCountry(cartData.shippingAddress.country || '')
     }
 
     if (cartData?.paymentMethod) {
@@ -49,8 +75,47 @@ const Shipping = () => {
     }
   }, [userInfo, navigate])
 
+  // Form validation function
+  const validateForm = () => {
+    const newErrors = {}
+
+    // Address validation
+    if (!address.trim()) {
+      newErrors.address = 'Address is required'
+    } else if (address.length < 5 || address.length > 100) {
+      newErrors.address = 'Address must be between 5 and 100 characters'
+    }
+
+    // City validation
+    if (!city.trim()) {
+      newErrors.city = 'City is required'
+    } else if (!NEPALESE_CITIES.includes(city.trim().toLowerCase())) {
+      newErrors.city = 'Please enter a valid Nepalese city'
+    }
+
+    // Postal code validation
+    const postalCodeRegex = /^\d{5}$/
+    if (!postalCode.trim()) {
+      newErrors.postalCode = 'Postal code is required'
+    } else if (!postalCodeRegex.test(postalCode.trim())) {
+      newErrors.postalCode = 'Postal code must be a 5-digit number'
+    }
+
+    // Payment method validation
+    if (!paymentMethod) {
+      newErrors.paymentMethod = 'Please select a payment method'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const submitHandler = async (e) => {
     e.preventDefault()
+
+    if (!validateForm()) {
+      return
+    }
 
     try {
       // Save shipping address
@@ -133,14 +198,23 @@ const Shipping = () => {
                       style={{
                         backgroundColor: 'rgba(7, 10, 19, 0.7)',
                         color: 'rgba(255, 255, 255, 0.9)',
-                        border: '1px solid rgba(211, 190, 249, 0.3)',
+                        border: errors.address
+                          ? '1px solid rgba(255, 99, 71, 0.7)'
+                          : '1px solid rgba(211, 190, 249, 0.3)',
                         boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
                       }}
                       placeholder='Enter address'
                       value={address}
-                      required
                       onChange={(e) => setAddress(e.target.value)}
                     />
+                    {errors.address && (
+                      <p
+                        className='text-sm mt-1'
+                        style={{ color: 'rgba(255, 99, 71, 0.7)' }}
+                      >
+                        {errors.address}
+                      </p>
+                    )}
                   </div>
 
                   <div className='mb-4'>
@@ -156,14 +230,23 @@ const Shipping = () => {
                       style={{
                         backgroundColor: 'rgba(7, 10, 19, 0.7)',
                         color: 'rgba(255, 255, 255, 0.9)',
-                        border: '1px solid rgba(211, 190, 249, 0.3)',
+                        border: errors.city
+                          ? '1px solid rgba(255, 99, 71, 0.7)'
+                          : '1px solid rgba(211, 190, 249, 0.3)',
                         boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
                       }}
-                      placeholder='Enter city'
+                      placeholder='Enter city (e.g., Kathmandu, Pokhara)'
                       value={city}
-                      required
                       onChange={(e) => setCity(e.target.value)}
                     />
+                    {errors.city && (
+                      <p
+                        className='text-sm mt-1'
+                        style={{ color: 'rgba(255, 99, 71, 0.7)' }}
+                      >
+                        {errors.city}
+                      </p>
+                    )}
                   </div>
 
                   <div className='mb-4'>
@@ -179,14 +262,23 @@ const Shipping = () => {
                       style={{
                         backgroundColor: 'rgba(7, 10, 19, 0.7)',
                         color: 'rgba(255, 255, 255, 0.9)',
-                        border: '1px solid rgba(211, 190, 249, 0.3)',
+                        border: errors.postalCode
+                          ? '1px solid rgba(255, 99, 71, 0.7)'
+                          : '1px solid rgba(211, 190, 249, 0.3)',
                         boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
                       }}
-                      placeholder='Enter postal code'
+                      placeholder='Enter 5-digit postal code'
                       value={postalCode}
-                      required
                       onChange={(e) => setPostalCode(e.target.value)}
                     />
+                    {errors.postalCode && (
+                      <p
+                        className='text-sm mt-1'
+                        style={{ color: 'rgba(255, 99, 71, 0.7)' }}
+                      >
+                        {errors.postalCode}
+                      </p>
+                    )}
                   </div>
 
                   <div className='mb-6'>
@@ -198,17 +290,16 @@ const Shipping = () => {
                     </label>
                     <input
                       type='text'
-                      className='w-full p-3 rounded focus:outline-none focus:ring-2'
+                      className='w-full p-3 rounded focus:outline-none'
                       style={{
                         backgroundColor: 'rgba(7, 10, 19, 0.7)',
                         color: 'rgba(255, 255, 255, 0.9)',
                         border: '1px solid rgba(211, 190, 249, 0.3)',
                         boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+                        cursor: 'not-allowed',
                       }}
-                      placeholder='Enter country'
                       value={country}
-                      required
-                      onChange={(e) => setCountry(e.target.value)}
+                      readOnly
                     />
                   </div>
 
@@ -222,12 +313,22 @@ const Shipping = () => {
                     >
                       Payment Method
                     </label>
+                    {errors.paymentMethod && (
+                      <p
+                        className='text-sm mb-2'
+                        style={{ color: 'rgba(255, 99, 71, 0.7)' }}
+                      >
+                        {errors.paymentMethod}
+                      </p>
+                    )}
                     <div className='space-y-3'>
                       <div
                         className='p-4 rounded'
                         style={{
                           backgroundColor: 'rgba(7, 10, 19, 0.7)',
-                          border: '1px solid rgba(211, 190, 249, 0.3)',
+                          border: errors.paymentMethod
+                            ? '1px solid rgba(255, 99, 71, 0.7)'
+                            : '1px solid rgba(211, 190, 249, 0.3)',
                         }}
                       >
                         <label className='flex items-center cursor-pointer'>
@@ -253,58 +354,9 @@ const Shipping = () => {
                         className='p-4 rounded'
                         style={{
                           backgroundColor: 'rgba(7, 10, 19, 0.7)',
-                          border: '1px solid rgba(211, 190, 249, 0.3)',
-                        }}
-                      >
-                        <label className='flex items-center cursor-pointer'>
-                          <input
-                            type='radio'
-                            className='h-5 w-5'
-                            style={{ accentColor: 'rgb(211, 190, 249)' }}
-                            name='paymentMethod'
-                            value='QRPayment'
-                            checked={paymentMethod === 'QRPayment'}
-                            onChange={(e) => setPaymentMethod(e.target.value)}
-                          />
-                          <span
-                            className='ml-3'
-                            style={{ color: 'rgba(255, 255, 255, 0.9)' }}
-                          >
-                            QR Code Payment
-                          </span>
-                        </label>
-                        {paymentMethod === 'QRPayment' && (
-                          <div className='mt-3 ml-8'>
-                            <p
-                              className='text-sm mb-2'
-                              style={{ color: 'rgba(255, 255, 255, 0.7)' }}
-                            >
-                              Scan this QR code to pay:
-                            </p>
-                            {/* Replace with your actual QR code image */}
-                            <div className='bg-white p-2 rounded inline-block'>
-                              <img
-                                src='/images/qr-code-placeholder.png'
-                                alt='QR Code'
-                                className='w-32 h-32'
-                              />
-                            </div>
-                            <p
-                              className='text-sm mt-2'
-                              style={{ color: 'rgba(255, 255, 255, 0.7)' }}
-                            >
-                              Amount: Rs.{' '}
-                              {cartData?.totalPrice?.toFixed(2) || '0.00'}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div
-                        className='p-4 rounded'
-                        style={{
-                          backgroundColor: 'rgba(7, 10, 19, 0.7)',
-                          border: '1px solid rgba(211, 190, 249, 0.3)',
+                          border: errors.paymentMethod
+                            ? '1px solid rgba(255, 99, 71, 0.7)'
+                            : '1px solid rgba(211, 190, 249, 0.3)',
                         }}
                       >
                         <label className='flex items-center cursor-pointer'>
@@ -315,7 +367,7 @@ const Shipping = () => {
                             name='paymentMethod'
                             value='Khalti'
                             checked={paymentMethod === 'Khalti'}
-                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            onChange={(e) => setPaymentMethod(e.target.value)} // Removed readOnly
                           />
                           <span
                             className='ml-3'

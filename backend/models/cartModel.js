@@ -37,7 +37,7 @@ const cartSchema = mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      default: 'Esewa',
+      default: '',
     },
     itemsPrice: {
       type: Number,

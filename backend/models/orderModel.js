@@ -9,7 +9,7 @@ const orderSchema = mongoose.Schema(
         name: { type: String, required: true },
         qty: { type: Number, required: true },
         image: { type: String, required: true },
-        price: { type: Number, required: true }, // Discounted price
+        price: { type: Number, required: true },
         product: {
           type: mongoose.Schema.Types.ObjectId,
           required: true,
@@ -67,7 +67,7 @@ const orderSchema = mongoose.Schema(
     totalSavings: {
       type: Number,
       required: true,
-      default: 0.0, // Total discount savings
+      default: 0.0,
     },
     isPaid: {
       type: Boolean,
@@ -102,6 +102,21 @@ const orderSchema = mongoose.Schema(
     timestamps: true,
   }
 )
+
+// Enforce isPaid as boolean
+orderSchema.pre('save', function (next) {
+  if (typeof this.isPaid !== 'boolean') {
+    console.warn(
+      `Invalid isPaid value for order ${this._id}: ${this.isPaid}. Setting to false.`
+    )
+    this.isPaid = false
+  }
+  if (!this.isPaid) {
+    this.paidAt = null
+    this.paymentResult = null
+  }
+  next()
+})
 
 const Order = mongoose.model('Order', orderSchema)
 export default Order
